@@ -1,0 +1,12 @@
+/*
+Theme Name: Gadgero
+Theme URI: https://gadgero.test/
+Description: Custom WooCommerce theme built from the approved Gadgero static storefront design (navy + electric blue, Sora / Manrope, 3D scroll hero). Storefront in English; cart, checkout and legal pages in German.
+Version: 1.0.0
+Requires at least: 6.5
+Requires PHP: 8.1
+WC requires at least: 9.0
+Text Domain: gadgero
+*/
+
+/* The design lives in assets/css/gadgero.css (approved static styles, unchanged) and assets/css/shop.css (WordPress + WooCommerce views in the same visual language). */
