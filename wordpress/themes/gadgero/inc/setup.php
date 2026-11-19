@@ -181,6 +181,9 @@ add_filter(
 	'body_class',
 	function ( $c ) {
 		$c[] = 'lang-' . substr( determine_locale(), 0, 2 );
+		if ( gadgero_wa_number() ) {
+			$c[] = 'has-wa';
+		}
 		return $c;
 	}
 );

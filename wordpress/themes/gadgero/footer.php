@@ -76,6 +76,26 @@ $visit   = $address || $hours;
 </aside>
 <?php endif; ?>
 <div class="toast" id="toast" role="status"></div>
+<?php
+/*
+ * Floating WhatsApp button (bottom left). Only rendered when the business number is configured
+ * (Customizer → Gadgero: company & contact) — never a WhatsApp link without a recipient.
+ * On product pages the prefilled message names the product.
+ */
+if ( gadgero_wa_number() ) :
+	$wa_text = sprintf( 'Hallo %s, ich habe eine Frage.', get_bloginfo( 'name' ) );
+	if ( function_exists( 'is_product' ) && is_product() ) {
+		$wa_text = sprintf( 'Hallo %1$s, ich habe eine Frage zu: %2$s', get_bloginfo( 'name' ), get_the_title( get_queried_object_id() ) );
+	}
+	?>
+	<a class="wa-float" href="<?php echo esc_url( gadgero_wa_link( $wa_text ) ); ?>" target="_blank" rel="noopener" aria-label="Fragen per WhatsApp stellen (öffnet WhatsApp)">
+		<span class="wa-pulse" aria-hidden="true"></span>
+		<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16.04 3C8.86 3 3.03 8.8 3.03 15.95c0 2.29.6 4.52 1.75 6.49L3 29l6.73-1.75a13.07 13.07 0 0 0 6.3 1.6h.01c7.17 0 13-5.8 13-12.95C29.04 8.8 23.21 3 16.04 3Zm0 23.66h-.01a10.8 10.8 0 0 1-5.5-1.5l-.4-.23-4 1.04 1.07-3.88-.26-.4a10.7 10.7 0 0 1-1.65-5.74c0-5.94 4.85-10.77 10.8-10.77 2.88 0 5.6 1.12 7.63 3.16a10.68 10.68 0 0 1 3.16 7.62c0 5.94-4.85 10.7-10.84 10.7Zm5.92-8.03c-.32-.16-1.92-.94-2.22-1.05-.3-.11-.51-.16-.73.16-.21.32-.84 1.05-1.03 1.27-.19.21-.38.24-.7.08-.32-.16-1.37-.5-2.6-1.6-.96-.85-1.61-1.9-1.8-2.22-.19-.32-.02-.5.14-.65.15-.15.32-.38.48-.56.16-.19.21-.32.32-.54.11-.21.05-.4-.03-.56-.08-.16-.73-1.75-1-2.4-.26-.62-.53-.54-.73-.55h-.62c-.21 0-.56.08-.86.4-.3.32-1.13 1.1-1.13 2.68 0 1.58 1.16 3.11 1.32 3.33.16.21 2.28 3.47 5.52 4.87.77.33 1.37.53 1.84.68.77.25 1.48.21 2.03.13.62-.09 1.92-.78 2.19-1.54.27-.75.27-1.4.19-1.54-.08-.13-.29-.21-.61-.37Z"/></svg>
+		<span class="wa-label">Fragen? WhatsApp</span>
+	</a>
+<?php elseif ( current_user_can( 'manage_options' ) ) : ?>
+	<div class="wa-float is-missing"><?php echo gadgero_flag( 'WhatsApp number – floating button hidden until set' ); // phpcs:ignore ?></div>
+<?php endif; ?>
 <?php wp_footer(); ?>
 </body>
 </html>
