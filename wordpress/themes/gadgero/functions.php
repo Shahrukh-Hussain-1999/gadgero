@@ -21,4 +21,5 @@ if ( class_exists( 'WooCommerce' ) ) {
 	require GADGERO_DIR . '/inc/product-fields.php';
 	require GADGERO_DIR . '/inc/admin-flags.php';
 	require GADGERO_DIR . '/inc/migrations.php';
+	require GADGERO_DIR . '/inc/product-images.php';
 }

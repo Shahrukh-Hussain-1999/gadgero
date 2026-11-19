@@ -21,6 +21,14 @@
   }
   function setImage(src, full, alt){
     $img.html('<img alt="">'); $img.find("img").attr({src:src, alt:alt || document.querySelector(".pdp-title").textContent}).attr("data-full", full || src);
+    noteNoPhoto(false);
+  }
+  /* colour without its own photo: neutral drawing + note, never the photo of another colour */
+  function showArt(){ $img.html($img.attr("data-art") || ""); noteNoPhoto(true); }
+  function noteNoPhoto(on){
+    var $n = $("#pdpNoPhoto");
+    if(!$n.length) $n = $('<p class="pdp-imgnote" id="pdpNoPhoto" hidden>Symbolbild – ein Foto dieser Farbe folgt.</p>').insertAfter(".pdp-stage");
+    $n.prop("hidden", !on);
   }
   $thumbs.on("click", function(){ show($thumbs.index(this)); });
   $(".pdp-nav").on("click", function(){ show(cur + parseInt($(this).data("step"),10)); });
@@ -119,19 +127,22 @@
       var score = 0; for(var k in want){ if(v.attributes[k] === want[k] || v.attributes[k] === "") score++; }
       if(!best || score > best.s) best = {s:score, v:v};
     });
-    if(best) setImage(best.v.image.src, best.v.image.full_src, best.v.image.alt);
+    var hasOwn = variations.some(function(v){ return v.attributes.attribute_pa_colour === $c.val() && !v.gadgero_no_photo; });
+    if(!hasOwn){ showArt(); return; }
+    if(best && !best.v.gadgero_no_photo) setImage(best.v.image.src, best.v.image.full_src, best.v.image.alt);
   }
 
   $form.on("woocommerce_update_variation_values", syncPills);
   $form.on("change", "select", function(){ syncPills(); writeConfig(); if(this.name === "attribute_pa_colour") imageForColour(); });
   $form.on("found_variation", function(e, v){
     if(v.price_html) $price.html(v.price_html);
-    if(v.image && v.image.src && v.image_id) setImage(v.image.src, v.image.full_src, v.image.alt);
+    if(v.gadgero_no_photo) showArt();
+    else if(v.image && v.image.src && v.image_id) setImage(v.image.src, v.image.full_src, v.image.alt);
     writeConfig();
   });
   $form.on("reset_data", function(){
     $price.html($price.data("initial")); syncPills(); writeConfig();
-    if(!$form.find('select[name="attribute_pa_colour"]').val()) $img.html(initialImg);
+    if(!$form.find('select[name="attribute_pa_colour"]').val()){ $img.html(initialImg); noteNoPhoto(false); }
   });
   syncPills(); writeConfig();
 })(jQuery);

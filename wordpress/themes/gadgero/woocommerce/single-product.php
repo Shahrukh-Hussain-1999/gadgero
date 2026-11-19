@@ -56,7 +56,7 @@ while ( have_posts() ) :
 				<div class="pdp-grid">
 					<div class="pdp-media" id="pdpMedia">
 						<div class="pdp-stage" style="--glow:<?php echo esc_attr( gadgero_glow( $product ) ); ?>40">
-							<div class="pdp-main-img" id="pdpImg">
+							<div class="pdp-main-img" id="pdpImg" data-art="<?php echo esc_attr( gadgero_device_svg( ( gadgero_art( $product ) ?? array( 'type' => 'phone' ) )['type'], ( gadgero_art( $product ) ?? array() )['c1'] ?? '#5b6270', ( gadgero_art( $product ) ?? array() )['c2'] ?? '#1d2026', ( gadgero_art( $product ) ?? array() )['frame'] ?? '#b9bfca' ) ); ?>">
 								<?php
 								if ( $gallery ) {
 									echo wp_get_attachment_image( $gallery[0], 'woocommerce_single', false, array( 'alt' => $product->get_name(), 'loading' => 'eager', 'fetchpriority' => 'high', 'data-full' => wp_get_attachment_image_url( $gallery[0], 'full' ) ) );

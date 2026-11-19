@@ -311,11 +311,8 @@ function gadgero_glow( WC_Product $p ) {
 
 /** Photo if one exists, otherwise the device illustration, otherwise WooCommerce's placeholder. */
 function gadgero_product_visual( WC_Product $p, $size = 'woocommerce_thumbnail' ) {
-	$img_id = $p->get_image_id();
-	if ( ! $img_id && $p->get_parent_id() ) {
-		$parent = wc_get_product( $p->get_parent_id() );
-		$img_id = $parent ? $parent->get_image_id() : 0;
-	}
+	// A variation shows only its own photo. Never fall back to the parent's photo, which may show another colour.
+	$img_id = $p->is_type( 'variation' ) ? $p->get_image_id( 'edit' ) : $p->get_image_id();
 	if ( $img_id ) {
 		return wp_get_attachment_image( $img_id, $size, false, array( 'alt' => $p->get_name(), 'loading' => 'lazy' ) );
 	}
@@ -325,6 +322,17 @@ function gadgero_product_visual( WC_Product $p, $size = 'woocommerce_thumbnail' 
 	}
 	return wc_placeholder_img( $size );
 }
+
+/** Product page: tell product.js which variations have no photo of their own colour. */
+add_filter(
+	'woocommerce_available_variation',
+	function ( $data, $product, $variation ) {
+		$data['gadgero_no_photo'] = ! $variation->get_image_id( 'edit' );
+		return $data;
+	},
+	10,
+	3
+);
 
 add_filter(
 	'woocommerce_cart_item_thumbnail',
