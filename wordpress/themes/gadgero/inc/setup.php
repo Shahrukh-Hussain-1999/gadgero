@@ -47,20 +47,24 @@ add_action(
 
 		// Approved typography. NOTE (GDPR): served from Google Fonts like the approved static site; self-host before launch.
 		wp_enqueue_style( 'gadgero-fonts', 'https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap', array(), null );
-		wp_enqueue_style( 'gadgero', GADGERO_URI . '/assets/css/gadgero.css', array( 'gadgero-fonts' ), $v );
-		wp_enqueue_style( 'gadgero-shop', GADGERO_URI . '/assets/css/shop.css', array( 'gadgero' ), $v );
+		wp_enqueue_style( 'gadgero', GADGERO_URI . '/assets/css/gadgero.css', array( 'gadgero-fonts' ), gadgero_asset_ver( 'assets/css/gadgero.css' ) );
+		wp_enqueue_style( 'gadgero-shop', GADGERO_URI . '/assets/css/shop.css', array( 'gadgero' ), gadgero_asset_ver( 'assets/css/shop.css' ) );
+		wp_enqueue_style( 'gadgero-refresh', GADGERO_URI . '/assets/css/refresh.css', array( 'gadgero-shop' ), gadgero_asset_ver( 'assets/css/refresh.css' ) );
 
-		wp_enqueue_script( 'gadgero-site', GADGERO_URI . '/assets/js/site.js', array(), $v, true );
+		wp_enqueue_script( 'gadgero-site', GADGERO_URI . '/assets/js/site.js', array(), gadgero_asset_ver( 'assets/js/site.js' ), true );
 		wp_localize_script(
 			'gadgero-site',
 			'GADGERO',
 			array(
 				'shop'      => get_bloginfo( 'name' ),
 				'wa'        => gadgero_wa_number(),
-				'added'     => __( 'added to cart', 'gadgero' ),
-				'copied'    => __( 'Message copied', 'gadgero' ),
-				'copyFail'  => __( 'Select and copy the text manually', 'gadgero' ),
-				'noModel'   => __( '(model not added)', 'gadgero' ),
+				'added'     => 'wurde in den Warenkorb gelegt',
+				'email'     => antispambot( gadgero_opt( 'gadgero_email' ) ),
+				'cfgDone'   => 'Ihre Auswahl',
+				'cfgOpen'   => 'Bitte alle Optionen wählen',
+				'copied'    => 'Nachricht kopiert',
+				'copyFail'  => 'Bitte markieren und manuell kopieren',
+				'needModel' => 'Bitte geben Sie das Modell an.',
 			)
 		);
 
@@ -68,7 +72,7 @@ add_action(
 			// Three.js r147 as in the approved design. NOTE: self-host before launch (GDPR / availability).
 			wp_enqueue_script( 'three', 'https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js', array(), null, true );
 			wp_enqueue_script( 'three-gltf', 'https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js', array( 'three' ), null, true );
-			wp_enqueue_script( 'gadgero-hero', GADGERO_URI . '/assets/js/hero.js', array( 'three-gltf', 'gadgero-site' ), $v, true );
+			wp_enqueue_script( 'gadgero-hero', GADGERO_URI . '/assets/js/hero.js', array( 'three-gltf', 'gadgero-site' ), gadgero_asset_ver( 'assets/js/hero.js' ), true );
 			wp_localize_script(
 				'gadgero-hero',
 				'GADGERO_HERO',
@@ -80,7 +84,7 @@ add_action(
 		}
 
 		if ( function_exists( 'is_product' ) && is_product() ) {
-			wp_enqueue_script( 'gadgero-product', GADGERO_URI . '/assets/js/product.js', array( 'jquery', 'gadgero-site' ), $v, true );
+			wp_enqueue_script( 'gadgero-product', GADGERO_URI . '/assets/js/product.js', array( 'jquery', 'gadgero-site' ), gadgero_asset_ver( 'assets/js/product.js' ), true );
 		}
 	}
 );
@@ -135,12 +139,12 @@ function gadgero_logo_url() {
 /** Fallback header menu (used until a menu is assigned to the "primary" location). */
 function gadgero_menu_fallback() {
 	$shop = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/' );
-	echo '<nav class="nav" aria-label="' . esc_attr__( 'Main', 'gadgero' ) . '">';
-	echo '<a href="' . esc_url( home_url( '/' ) ) . '">' . esc_html__( 'Home', 'gadgero' ) . '</a>';
-	echo '<a href="' . esc_url( $shop ) . '">' . esc_html__( 'Shop', 'gadgero' ) . '</a>';
-	echo '<a href="' . esc_url( home_url( '/#about' ) ) . '">' . esc_html__( 'About', 'gadgero' ) . '</a>';
-	echo '<a href="' . esc_url( home_url( '/#sell' ) ) . '">' . esc_html__( 'Sell yours', 'gadgero' ) . '</a>';
-	echo '<a href="#contact">' . esc_html__( 'Contact', 'gadgero' ) . '</a>';
+	echo '<nav class="nav" aria-label="' . 'Hauptnavigation' . '">';
+	echo '<a href="' . esc_url( home_url( '/' ) ) . '">' . 'Startseite' . '</a>';
+	echo '<a href="' . esc_url( $shop ) . '">' . 'Shop' . '</a>';
+	echo '<a href="' . esc_url( home_url( '/#about' ) ) . '">' . 'Über uns' . '</a>';
+	echo '<a href="' . esc_url( home_url( '/#sell' ) ) . '">' . 'Gerät verkaufen' . '</a>';
+	echo '<a href="#contact">' . 'Kontakt' . '</a>';
 	echo '</nav>';
 }
 
@@ -151,7 +155,7 @@ function gadgero_primary_nav() {
 		return;
 	}
 	$items = wp_get_nav_menu_items( get_nav_menu_locations()['primary'] );
-	echo '<nav class="nav" aria-label="' . esc_attr__( 'Main', 'gadgero' ) . '">';
+	echo '<nav class="nav" aria-label="' . 'Hauptnavigation' . '">';
 	foreach ( (array) $items as $item ) {
 		if ( $item->menu_item_parent ) {
 			continue;
@@ -180,3 +184,9 @@ add_filter(
 		return $c;
 	}
 );
+
+/** Cache-busting version: theme version + file modification time. */
+function gadgero_asset_ver( $rel ) {
+	$f = GADGERO_DIR . '/' . $rel;
+	return GADGERO_VERSION . '.' . ( file_exists( $f ) ? filemtime( $f ) : '0' );
+}

@@ -35,6 +35,30 @@ function gadgero_wa_link( $text = '' ) {
 	return 'https://wa.me/' . $n . ( $text !== '' ? '?text=' . rawurlencode( $text ) : '' );
 }
 
+/**
+ * Link for advice / support requests that always reaches Gadgero (brief item 09):
+ * WhatsApp when a business number is configured, otherwise e-mail, otherwise the contact section.
+ * Never a WhatsApp link without a recipient.
+ */
+function gadgero_advice_link( $text = '' ) {
+	if ( gadgero_wa_number() ) {
+		return gadgero_wa_link( $text );
+	}
+	$email = gadgero_opt( 'gadgero_email' );
+	if ( $email ) {
+		return 'mailto:' . antispambot( $email ) . '?subject=' . rawurlencode( 'Anfrage an ' . get_bloginfo( 'name' ) ) . ( $text ? '&body=' . rawurlencode( $text ) : '' );
+	}
+	return home_url( '/#contact' );
+}
+
+/** Label for the advice link, matching the channel it opens. */
+function gadgero_advice_label() {
+	if ( gadgero_wa_number() ) {
+		return 'Per WhatsApp fragen';
+	}
+	return gadgero_opt( 'gadgero_email' ) ? 'Per E-Mail fragen' : 'Kontakt';
+}
+
 /** Pretty-print the WhatsApp number for display: +49 151 23456789 style grouping is not guessed, digits are shown as entered. */
 function gadgero_wa_display() {
 	$raw = (string) gadgero_opt( 'gadgero_whatsapp' );
@@ -143,6 +167,11 @@ function gadgero_icon( $name ) {
 		'chat'    => '<path d="M4 19l1.4-4A8 8 0 1 1 9 18.6z"/>',
 		'arrow'   => '<path d="M5 12h14M13 6l6 6-6 6"/>',
 		'menu'    => '<path d="M4 7h16M4 12h16M4 17h16"/>',
+		'battery' => '<rect x="3" y="7" width="16" height="10" rx="2.5"/><path d="M21 10.5v3"/><path d="M6.5 10v4M9.5 10v4M12.5 10v4"/>',
+		'user'    => '<circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-3.6 3.6-5.6 7-5.6s6.2 2 7 5.6"/>',
+		'zoom'    => '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.4-4.4M11 8.5v5M8.5 11h5"/>',
+		'chev-l'  => '<path d="M15 5l-7 7 7 7"/>',
+		'chev-r'  => '<path d="M9 5l7 7-7 7"/>',
 	);
 	return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . ( $p[ $name ] ?? '' ) . '</svg>';
 }

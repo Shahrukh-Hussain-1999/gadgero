@@ -7,7 +7,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'GADGERO_VERSION', '1.0.0' );
+define( 'GADGERO_VERSION', '1.1.0' );
 define( 'GADGERO_DIR', get_template_directory() );
 define( 'GADGERO_URI', get_template_directory_uri() );
 
@@ -20,4 +20,5 @@ if ( class_exists( 'WooCommerce' ) ) {
 	require GADGERO_DIR . '/inc/woocommerce.php';
 	require GADGERO_DIR . '/inc/product-fields.php';
 	require GADGERO_DIR . '/inc/admin-flags.php';
+	require GADGERO_DIR . '/inc/migrations.php';
 }

@@ -44,6 +44,52 @@ add_shortcode(
 	}
 );
 
+/**
+ * [gadgero_shipping] – the shipping zones, methods and costs exactly as configured in WooCommerce, plus the
+ * delivery time from the Customizer and the enabled payment methods. Brief item 10: the published delivery terms
+ * can never differ from what the checkout charges.
+ */
+add_shortcode(
+	'gadgero_shipping',
+	function () {
+		if ( ! class_exists( 'WC_Shipping_Zones' ) ) {
+			return '';
+		}
+		$out = '<table class="ship-table"><thead><tr><th>Liefergebiet</th><th>Versandart</th><th>Kosten (inkl. MwSt.)</th></tr></thead><tbody>';
+		$n   = 0;
+		foreach ( WC_Shipping_Zones::get_zones() as $z ) {
+			$zone = new WC_Shipping_Zone( $z['id'] );
+			foreach ( $zone->get_shipping_methods( true ) as $m ) {
+				$cost = $m->get_option( 'cost', '' );
+				if ( 'free_shipping' === $m->id ) {
+					$label = 'kostenlos';
+				} elseif ( '' === $cost || is_numeric( str_replace( ',', '.', $cost ) ) ) {
+					$label = wc_price( (float) str_replace( ',', '.', (string) $cost ) );
+				} else {
+					$label = 'wird an der Kasse berechnet';
+				}
+				$out .= '<tr><td>' . esc_html( $z['zone_name'] ) . '</td><td>' . esc_html( $m->get_title() ) . '</td><td>' . wp_kses_post( $label ) . '</td></tr>';
+				++$n;
+			}
+		}
+		$out .= '</tbody></table>';
+		if ( ! $n ) {
+			$out = '<p>' . gadgero_todo_html( 'Versandzonen und -kosten' ) . '</p>';
+		}
+		$time = gadgero_opt( 'gadgero_delivery_time' );
+		$out .= '<p><strong>Lieferzeit:</strong> ' . ( $time ? esc_html( $time ) : gadgero_todo_html( 'Lieferzeit' ) ) . '</p>';
+		$gw    = function_exists( 'WC' ) && WC()->payment_gateways() ? WC()->payment_gateways()->payment_gateways() : array();
+		$names = array();
+		foreach ( $gw as $g ) {
+			if ( 'yes' === $g->enabled ) {
+				$names[] = $g->get_title();
+			}
+		}
+		$out .= '<p><strong>Zahlungsarten:</strong> ' . ( $names ? esc_html( implode( ', ', $names ) ) : gadgero_todo_html( 'Zahlungsarten' ) ) . '</p>';
+		return $out;
+	}
+);
+
 add_shortcode(
 	'gadgero_actions',
 	function () {

@@ -487,5 +487,10 @@ update_option(
 	)
 );
 
+// German storefront labels, brands, featured selection, verified specs (theme migrations, see inc/migrations.php).
+if ( function_exists( 'gadgero_run_migrations' ) ) {
+	gadgero_run_migrations( true );
+}
+
 flush_rewrite_rules();
 WP_CLI::success( 'Seed complete. Front page: ' . home_url( '/' ) );

@@ -61,24 +61,40 @@
     if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function(){ toast(msg); }, fallback); else fallback();
   }
 
-  /* buyback: device type, model, storage and condition go into the WhatsApp message and the copied text */
+  /* Ankauf: device type, model, storage and condition go into the quote request and the copied text.
+     A model is required before any request is generated (brief item 09). The request goes to the WhatsApp business
+     number, or by e-mail while no number is configured — never to a WhatsApp link without a recipient. */
   var form = $("sellForm");
   if(form){
     var hints = {}; try{ hints = JSON.parse(form.dataset.hints || "{}"); }catch(_){}
-    var dev = $("sDev"), model = $("sModel"), store = $("sStore"), cond = $("sCond"), wa = $("sellWa"), prev = $("sPreview");
+    var dev = $("sDev"), model = $("sModel"), store = $("sStore"), cond = $("sCond"), send = $("sellSend"), prev = $("sPreview"), err = $("sModelErr");
+    var channel = form.dataset.channel;
     function sellText(){
       var m = model.value.trim(), s = store.value;
-      var what = (m || CFG.noModel) + (s ? " · " + s : "");
-      return "Hi " + CFG.shop + ", I want to sell my " + dev.options[dev.selectedIndex].value + ": " + what + ". Condition: " + cond.value + ". What price can you offer?";
+      var what = (m || "[Modell]") + (s ? " · " + s : "");
+      return "Hallo " + CFG.shop + ", ich möchte mein Gerät verkaufen. Geräteart: " + dev.value + ". Modell: " + what + ". Zustand: " + cond.value + ". Welchen Preis können Sie mir anbieten?";
+    }
+    function valid(show){
+      var ok = model.value.trim().length > 1;
+      model.setAttribute("aria-invalid", String(!ok && show));
+      if(err) err.hidden = ok || !show;
+      if(send) send.setAttribute("aria-disabled", String(!ok));
+      return ok;
     }
     function sellLink(){
       if(hints[dev.value]) model.placeholder = hints[dev.value];
-      wa.href = "https://wa.me/" + (CFG.wa || "") + "?text=" + encodeURIComponent(sellText());
-      if(prev) prev.textContent = sellText();
+      var t = sellText();
+      if(send){
+        send.href = channel === "wa" ? "https://wa.me/" + CFG.wa + "?text=" + encodeURIComponent(t)
+                  : "mailto:" + CFG.email + "?subject=" + encodeURIComponent("Ankaufsanfrage: " + (model.value.trim() || dev.value)) + "&body=" + encodeURIComponent(t);
+      }
+      if(prev) prev.textContent = t;
+      valid(false);
     }
     [dev, model, store, cond].forEach(function(el){ el.addEventListener("input", sellLink); el.addEventListener("change", sellLink); });
     form.addEventListener("submit", function(e){ e.preventDefault(); });
-    $("sellCopy").addEventListener("click", function(){ copy(sellText(), CFG.copied); });
+    if(send) send.addEventListener("click", function(e){ if(!valid(true)){ e.preventDefault(); model.focus(); toast(CFG.needModel); } });
+    $("sellCopy").addEventListener("click", function(){ if(!valid(true)){ model.focus(); toast(CFG.needModel); return; } copy(sellText(), CFG.copied); });
     sellLink();
     window.gadgeroSellText = sellText;
   }

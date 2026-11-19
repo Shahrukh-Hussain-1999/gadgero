@@ -1,6 +1,7 @@
 <?php
 /**
- * Footer: approved navy footer. Contact data comes from the Customizer and is never hard-coded.
+ * Footer. Contact data comes from the Customizer only (company is still being formed – fields stay editable).
+ * Brief item 09: no empty "Besuch" column; a contact e-mail slot is shown once the address is supplied.
  *
  * @package Gadgero
  */
@@ -13,65 +14,64 @@ $phone   = gadgero_opt( 'gadgero_phone' );
 $email   = gadgero_opt( 'gadgero_email' );
 $wa      = gadgero_wa_display();
 $company = gadgero_opt( 'gadgero_company_name' );
+$visit   = $address || $hours;
 ?>
 <footer id="contact">
-	<div class="wrap fgrid">
+	<div class="wrap fgrid<?php echo $visit ? '' : ' no-visit'; ?>">
 		<div>
 			<img class="flogo" src="<?php echo esc_url( gadgero_logo_url() ); ?>" alt="<?php bloginfo( 'name' ); ?>" width="170" height="132" loading="lazy">
-			<p><?php esc_html_e( 'New and refurbished phones, tablets, laptops, desktops, smartwatches and accessories.', 'gadgero' ); ?></p>
+			<p>Neue und refurbished Smartphones, Tablets, Laptops, Desktops, Smartwatches und Zubehör.</p>
 		</div>
-		<div>
-			<h5><?php esc_html_e( 'Visit', 'gadgero' ); ?></h5>
-			<?php
-			foreach ( $address as $l ) {
-				echo '<p>' . esc_html( $l ) . '</p>';
-			}
-			echo $address ? '' : gadgero_flag( 'business address' ); // phpcs:ignore
-			if ( $hours ) {
-				echo '<p style="margin-top:10px">' . esc_html( array_shift( $hours ) ) . '</p>';
-				foreach ( $hours as $l ) {
+		<?php if ( $visit ) : ?>
+			<div>
+				<h2 class="fh">Besuch</h2>
+				<?php
+				foreach ( $address as $l ) {
 					echo '<p>' . esc_html( $l ) . '</p>';
 				}
-			} else {
-				echo gadgero_flag( 'opening hours' ); // phpcs:ignore
-			}
-			?>
-		</div>
+				if ( $hours ) {
+					echo '<p style="margin-top:10px">' . esc_html( array_shift( $hours ) ) . '</p>';
+					foreach ( $hours as $l ) {
+						echo '<p>' . esc_html( $l ) . '</p>';
+					}
+				}
+				?>
+			</div>
+		<?php endif; ?>
 		<div>
-			<h5><?php esc_html_e( 'Contact', 'gadgero' ); ?></h5>
-			<?php if ( $wa ) : ?>
-				<p class="sel"><a href="<?php echo esc_url( gadgero_wa_link() ); ?>" target="_blank" rel="noopener">WhatsApp <?php echo esc_html( $wa ); ?></a></p>
-			<?php else : ?>
-				<?php echo gadgero_flag( 'WhatsApp number' ); // phpcs:ignore ?>
-			<?php endif; ?>
-			<?php if ( $phone ) : ?>
-				<p><a href="tel:<?php echo esc_attr( preg_replace( '/[^\d+]/', '', $phone ) ); ?>"><?php echo esc_html( $phone ); ?></a></p>
-			<?php else : ?>
-				<?php echo gadgero_flag( 'telephone' ); // phpcs:ignore ?>
-			<?php endif; ?>
+			<h2 class="fh">Kontakt</h2>
 			<?php if ( $email ) : ?>
 				<p><a href="mailto:<?php echo esc_attr( antispambot( $email ) ); ?>"><?php echo esc_html( antispambot( $email ) ); ?></a></p>
 			<?php else : ?>
-				<?php echo gadgero_flag( 'support e-mail' ); // phpcs:ignore ?>
+				<?php echo gadgero_flag( 'contact e-mail' ); // phpcs:ignore ?>
 			<?php endif; ?>
-			<p><?php esc_html_e( 'WhatsApp: advice, stock questions and buyback quotes.', 'gadgero' ); ?></p>
+			<?php if ( $wa ) : ?>
+				<p><a href="<?php echo esc_url( gadgero_wa_link() ); ?>" target="_blank" rel="noopener">WhatsApp <?php echo esc_html( $wa ); ?></a></p>
+			<?php else : ?>
+				<?php echo gadgero_flag( 'WhatsApp business number' ); // phpcs:ignore ?>
+			<?php endif; ?>
+			<?php if ( $phone ) : ?>
+				<p><a href="tel:<?php echo esc_attr( preg_replace( '/[^\d+]/', '', $phone ) ); ?>"><?php echo esc_html( $phone ); ?></a></p>
+			<?php endif; ?>
+			<p>Beratung, Fragen zum Lagerbestand und Ankaufsangebote.</p>
+			<?php echo $visit ? '' : gadgero_flag( 'address / opening hours – "Besuch" column hidden until supplied' ); // phpcs:ignore ?>
 		</div>
 		<div>
-			<h5><?php esc_html_e( 'Service', 'gadgero' ); ?></h5>
+			<h2 class="fh">Service</h2>
 			<?php gadgero_footer_links( 'service' ); ?>
 		</div>
 	</div>
 	<div class="wrap fbar">
-		<p class="rights">&copy; <?php echo esc_html( gmdate( 'Y' ) ); ?> <b><?php echo esc_html( $company ? $company : get_bloginfo( 'name' ) ); ?></b>. <?php esc_html_e( 'All rights reserved.', 'gadgero' ); ?></p>
-		<nav class="legal" aria-label="<?php esc_attr_e( 'Legal', 'gadgero' ); ?>"><?php gadgero_footer_links( 'legal' ); ?></nav>
-		<p class="fine"><?php esc_html_e( 'Apple, iPhone, iPad, Mac, Apple Watch and AirPods are trademarks of Apple Inc. Samsung and Galaxy are trademarks of Samsung Electronics. Gadgero is an independent reseller and is not affiliated with these companies.', 'gadgero' ); ?></p>
+		<p class="rights">&copy; <?php echo esc_html( gmdate( 'Y' ) ); ?> <b><?php echo esc_html( $company ? $company : get_bloginfo( 'name' ) ); ?></b>. Alle Rechte vorbehalten.</p>
+		<nav class="legal" aria-label="Rechtliches"><?php gadgero_footer_links( 'legal' ); ?></nav>
+		<p class="fine">Apple, iPhone, iPad, Mac, Apple Watch und AirPods sind Marken der Apple Inc. Samsung und Galaxy sind Marken der Samsung Electronics Co., Ltd. Gadgero ist ein unabhängiger Händler und steht in keiner Verbindung zu diesen Unternehmen.</p>
 	</div>
 </footer>
 
 <?php if ( class_exists( 'WooCommerce' ) ) : ?>
 <div class="veil" id="veil"></div>
-<aside class="drawer" id="drawer" aria-label="<?php esc_attr_e( 'Your cart', 'gadgero' ); ?>" aria-hidden="true" inert>
-	<div class="dhead"><h4><?php esc_html_e( 'Your cart', 'gadgero' ); ?></h4><button class="x" id="closeCart" type="button" aria-label="<?php esc_attr_e( 'Close cart', 'gadgero' ); ?>">&times;</button></div>
+<aside class="drawer" id="drawer" aria-label="Ihr Warenkorb" aria-hidden="true" inert>
+	<div class="dhead"><h2 class="dh">Ihr Warenkorb</h2><button class="x" id="closeCart" type="button" aria-label="Warenkorb schließen">&times;</button></div>
 	<?php gadgero_drawer_inner(); ?>
 </aside>
 <?php endif; ?>

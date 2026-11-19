@@ -1,6 +1,7 @@
 <?php
 /**
- * Homepage product grid (approved compact grid + category chips). Products, prices and stock come from WooCommerce.
+ * Short selection (brief item 03): featured products (max. 8) instead of the full range, category links that wrap
+ * (no horizontal scrolling) and a visible "Alle Geräte" link. The full range stays in the shop.
  *
  * @package Gadgero
  */
@@ -10,22 +11,26 @@ defined( 'ABSPATH' ) || exit;
 if ( ! function_exists( 'wc_get_products' ) ) {
 	return;
 }
-$q = new WP_Query(
-	array(
-		'post_type'      => 'product',
-		'post_status'    => 'publish',
-		'posts_per_page' => 16,
-		'orderby'        => array( 'menu_order' => 'ASC', 'date' => 'DESC' ),
-		'tax_query'      => array( // phpcs:ignore
-			array(
-				'taxonomy' => 'product_visibility',
-				'field'    => 'name',
-				'terms'    => array( 'exclude-from-catalog' ),
-				'operator' => 'NOT IN',
-			),
+$ids = wc_get_featured_product_ids();
+$args = array(
+	'post_type'      => 'product',
+	'post_status'    => 'publish',
+	'posts_per_page' => 8,
+	'orderby'        => array( 'menu_order' => 'ASC', 'date' => 'DESC' ),
+	'tax_query'      => array( // phpcs:ignore
+		array(
+			'taxonomy' => 'product_visibility',
+			'field'    => 'name',
+			'terms'    => array( 'exclude-from-catalog' ),
+			'operator' => 'NOT IN',
 		),
-	)
+	),
 );
+if ( $ids ) {
+	$args['post__in'] = $ids;
+}
+$q    = new WP_Query( $args );
+$shop = wc_get_page_permalink( 'shop' );
 $cats = get_terms(
 	array(
 		'taxonomy'   => 'product_cat',
@@ -35,20 +40,20 @@ $cats = get_terms(
 	)
 );
 ?>
-<section id="shop">
+<section id="shop" class="home-shop">
 	<div class="wrap">
 		<div class="shophead">
 			<div>
-				<p class="eyebrow"><?php esc_html_e( 'In stock now', 'gadgero' ); ?></p>
-				<h3 class="sec"><?php esc_html_e( 'Pick your next device.', 'gadgero' ); ?></h3>
+				<p class="eyebrow">Auswahl</p>
+				<h2 class="sec">Beliebte Geräte</h2>
 			</div>
-			<div class="chips" id="chips" role="group" aria-label="<?php esc_attr_e( 'Filter by category', 'gadgero' ); ?>">
-				<button class="chip" type="button" data-f="all" aria-pressed="true"><?php esc_html_e( 'All', 'gadgero' ); ?></button>
-				<?php foreach ( (array) $cats as $c ) : ?>
-					<button class="chip" type="button" data-f="<?php echo esc_attr( $c->slug ); ?>" aria-pressed="false"><?php echo esc_html( $c->name ); ?></button>
-				<?php endforeach; ?>
-			</div>
+			<a class="all-link" href="<?php echo esc_url( $shop ); ?>">Alle Geräte <span aria-hidden="true">&rarr;</span></a>
 		</div>
+		<nav class="catlinks" aria-label="Kategorien">
+			<?php foreach ( (array) $cats as $c ) : ?>
+				<a class="chip" href="<?php echo esc_url( get_term_link( $c ) ); ?>"><?php echo esc_html( $c->name ); ?></a>
+			<?php endforeach; ?>
+		</nav>
 		<div class="grid" id="grid">
 			<?php
 			while ( $q->have_posts() ) {
@@ -58,6 +63,6 @@ $cats = get_terms(
 			wp_reset_postdata();
 			?>
 		</div>
-		<p class="note"><?php echo wp_kses_post( sprintf( __( 'All prices in euros, %1$s. <a href="%2$s">See all devices</a>.', 'gadgero' ), wp_strip_all_tags( gadgero_price_notice() ), esc_url( wc_get_page_permalink( 'shop' ) ) ) ); ?></p>
+		<p class="note">Alle Preise in Euro, <?php echo wp_kses_post( wp_strip_all_tags( gadgero_price_notice() ) ); ?>. <a href="<?php echo esc_url( $shop ); ?>">Alle Geräte ansehen</a></p>
 	</div>
 </section>

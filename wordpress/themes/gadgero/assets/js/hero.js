@@ -1,41 +1,26 @@
-/* Gadgero hero: approved scroll story with the 3D foldable phone (ported unchanged from the static site, apart from
-   reading the campaign word, model URL and step panels from WordPress). Needs three.js r147 + GLTFLoader. */
+/* Gadgero hero (brief 15.11.2026, item 01): the existing 3D Duo with its scroll-driven rotation and fold sequence.
+   The headline block stays on the left (desktop) / top (mobile) at every stage; the device always sits beside or below it.
+   prefers-reduced-motion: one static frame, no scroll story, no particle drift. Needs three.js r147 + GLTFLoader. */
 (function(){
   var CFG = window.GADGERO_HERO || {};
   var story = document.getElementById("story");
   if(!story) return;
   var stage = document.getElementById("stage"), canvas = document.getElementById("gl");
-  var wordEl = document.getElementById("word"), ringEl = document.getElementById("ring"), introEl = document.getElementById("intro"), hintEl = document.getElementById("hint");
-  var stepsEl = document.getElementById("steps"), curEl = document.getElementById("cur"), progEl = document.getElementById("prog");
+  var ringEl = document.getElementById("ring"), hintEl = document.getElementById("hint"), progEl = document.getElementById("prog");
   var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  /* giant lettering: one span per character, then fitted to the stage width so longer campaign names still fit */
-  (CFG.word || "").split("").forEach(function(ch,j){ var s = document.createElement("span"); s.style.setProperty("--i", j); if(ch === " "){ s.className = "sp"; s.textContent = " "; } else s.textContent = ch; wordEl.appendChild(s); });
-  /* longer names: shrink to fit on one line; if that would make it small (narrow screens), break into lines per word instead */
-  function fitWord(){
-    wordEl.style.fontSize = ""; wordEl.style.whiteSpace = ""; wordEl.classList.remove("multi");
-    var max = stage.clientWidth * .94, w = wordEl.scrollWidth, fs = parseFloat(getComputedStyle(wordEl).fontSize);
-    if(w <= max) return;
-    var one = fs * max / w;
-    if(one >= 64 || (CFG.word || "").indexOf(" ") < 0){ wordEl.style.fontSize = Math.max(40, one) + "px"; return; }
-    wordEl.classList.add("multi");
-    var longest = Math.max.apply(null, (CFG.word || "").split(" ").map(function(s){ return s.length; }));
-    var lw = w / (CFG.word || "").length * longest;   /* approx. width of the longest word at the current size */
-    wordEl.style.fontSize = Math.min(fs, fs * max / lw) + "px";
-  }
-  fitWord(); window.addEventListener("resize", fitWord);
-  if(document.fonts && document.fonts.ready) document.fonts.ready.then(fitWord);
+  var STATIC = reduce, STATIC_P = .5;   /* reduced motion: open device, three-quarter view */
+  if(STATIC) story.classList.add("static");
   requestAnimationFrame(function(){ requestAnimationFrame(function(){ story.classList.add("ready"); }); });
 
-  /* step panels are rendered by WordPress; their scroll ranges come from data-from / data-to */
-  var STEPS = Array.prototype.map.call(stepsEl.querySelectorAll(".step"), function(el){ return {from:parseFloat(el.dataset.from), to:parseFloat(el.dataset.to), el:el}; });
+  /* text stages inside the headline block; their scroll ranges come from data-from / data-to */
+  var STEPS = Array.prototype.map.call(story.querySelectorAll(".hero-slide"), function(el){ return {from:parseFloat(el.dataset.from), to:parseFloat(el.dataset.to), el:el}; });
 
   /* phone pose per scroll position. rY/rX rotation, x = side shift (0..1 of the free space), y/ox/oy world offsets, s scale, m = 1 when a text panel sits under the phone on small screens */
   var PI = Math.PI;
   var KEYS = [
-    {t:0,    rY:PI-.55,rX:.1,  x:0, y:-1.2, ox:0, oy:0, s:.9,  m:.8},
-    {t:.14,  rY:1.3,   rX:.06, x:0, y:-.4,  ox:0, oy:0, s:.95, m:.8},
-    {t:.28,  rY:0,     rX:0,   x:0, y:0,    ox:0, oy:0, s:1,   m:.8},
+    {t:0,    rY:PI-.55,rX:.1,  x:1, y:-.5, ox:0, oy:0, s:.9,  m:.8},
+    {t:.14,  rY:1.3,   rX:.06, x:1, y:-.2,  ox:0, oy:0, s:.95, m:.8},
+    {t:.28,  rY:0,     rX:0,   x:1, y:0,    ox:0, oy:0, s:1,   m:.8},
     {t:.38,  rY:.35,   rX:.04, x:1, y:0,    ox:0, oy:0, s:1,   m:1},
     {t:.62,  rY:.7,    rX:.05, x:1, y:0,    ox:0, oy:0, s:1.04,m:1},
     {t:.82,  rY:-.1,   rX:0,   x:1, y:0,    ox:0, oy:0, s:1.06,m:1},
@@ -232,7 +217,9 @@
 
   /* ---- scroll progress, smoothed ---- */
   var target = 0, cur = 0, mx = 0, my = 0, smx = 0, smy = 0, running = false;
+  var MOBILE_Y = .25;   /* mobile: device sits between the title (top) and the price / action (bottom) */
   function readProgress(){
+    if(STATIC) return STATIC_P;
     var r = story.getBoundingClientRect(), hh = stage.getBoundingClientRect().top; /* stage top is pinned under the header */
     var total = story.offsetHeight - stage.offsetHeight;
     var offset = r.top - parseFloat(getComputedStyle(story).marginTop || 0) * 0; /* story top relative to viewport */
@@ -243,19 +230,11 @@
 
   function apply(p, time){
     var o = pose(p), desk = vw/vh > 1.05;
-    /* step panels + counter */
-    var idx = -1; STEPS.forEach(function(s,i){ if(p >= s.from && p < s.to) idx = i; });
-    STEPS.forEach(function(s,i){ s.el.classList.toggle("on", i===idx); });
-    var n = idx >= 0 ? idx+2 : (p < .34 ? 1 : (STEPS.filter(function(s){ return p >= s.to; }).length + 1));
-    curEl.textContent = "0" + clamp(n,1,2);
+    /* text stage */
+    var idx = 0; if(!STATIC) STEPS.forEach(function(s,i){ if(p >= s.from && p < s.to) idx = i; });
+    STEPS.forEach(function(s,i){ s.el.classList.toggle("is-on", i===idx); });
     progEl.style.height = (p*100) + "%";
-
-    /* intro copy, word, hint fade out as the phone moves off-centre */
-    var fade = clamp((p-.02)/.08, 0, 1);
-    introEl.style.opacity = 1 - fade; introEl.style.transform = "translateY(" + (fade*30) + "px)"; introEl.style.pointerEvents = fade > .8 ? "none" : "auto";
     hintEl.style.opacity = 1 - clamp(p/.03,0,1);
-    var wf = clamp((p-.06)/.12, 0, 1);
-    wordEl.style.opacity = 1 - wf; wordEl.style.transform = "scale(" + (1 + wf*.18) + ") translateY(" + (-wf*40) + "px)";
 
     /* background light follows the phone */
     stage.style.setProperty("--gx", (68 - o.x*18 + Math.sin(p*7)*6) + "%");
@@ -264,11 +243,11 @@
     var cam = R ? R.camera : null, dist = 16;
     var visH = 2*Math.tan((30*PI/180)/2)*dist, visW = visH*(vw/vh);
     var closed = clamp(1 - (p-.03)/.22, 0, 1); closed = closed*closed*(3-2*closed);
-    var sc = o.s*(desk ? 1 : .7)*(R && R.mixer ? 1 + (desk ? .45 : .28)*closed : 1), shiftX = desk ? o.x*visW*.2 : 0;
-    var px = shiftX + o.ox*(desk?1:.7)*sc/o.s*1, py = o.y + o.oy*(desk?1:.75) + (desk ? 0 : o.m*1.7);
+    var sc = o.s*(desk ? 1 : .7)*(R && R.mixer ? 1 + (desk ? .18 : .2)*closed : 1), shiftX = desk ? o.x*visW*.2 : 0;
+    var px = shiftX + o.ox*(desk?1:.7)*sc/o.s*1, py = desk ? o.y + o.oy : o.y*.45 + MOBILE_Y;
     if(!desk) px = o.ox*.5;
     var bob = Math.sin(time*.0012)*.07;
-    smx += (mx - smx)*.06; smy += (my - smy)*.06;
+    if(STATIC){ smx = smy = 0; } else { smx += (mx - smx)*.06; smy += (my - smy)*.06; }
 
     if(R){
       R.phone.rotation.y = o.rY + smx*.14; R.phone.rotation.x = o.rX + smy*.08;

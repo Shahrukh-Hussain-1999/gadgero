@@ -30,12 +30,18 @@ function gadgero_condition( $product ) {
 
 /** Human label for a condition, in the language of the current page. */
 function gadgero_condition_label( $slug ) {
-	$de = 0 === strpos( determine_locale(), 'de' );
-	$l  = array(
-		'new'         => $de ? 'Neu' : 'New',
-		'refurbished' => $de ? 'Refurbished (generalüberholt)' : 'Refurbished',
+	$l = array(
+		'new'         => 'Neu',
+		'refurbished' => 'Refurbished',
 	);
 	return $l[ $slug ] ?? '';
+}
+
+/** Brand name (WooCommerce Brands taxonomy), or ''. */
+function gadgero_brand( WC_Product $p ) {
+	$id    = $p->get_parent_id() ? $p->get_parent_id() : $p->get_id();
+	$names = taxonomy_exists( 'product_brand' ) ? wc_get_product_terms( $id, 'product_brand', array( 'fields' => 'names' ) ) : array();
+	return $names ? (string) $names[0] : '';
 }
 
 /** Attribute order used for configuration lines: screen size · storage · colour · connectivity · others. */
@@ -147,16 +153,14 @@ add_filter(
 			)
 		);
 		$line = gadgero_config_line( $product, (array) ( $cart_item['variation'] ?? array() ) );
+		$add  = array();
 		if ( $line ) {
-			array_unshift(
-				$item_data,
-				array(
-					'key'   => 0 === strpos( determine_locale(), 'de' ) ? 'Konfiguration' : 'Configuration',
-					'value' => $line,
-				)
-			);
+			$add[] = array( 'key' => 'Konfiguration', 'value' => $line );
 		}
-		return $item_data;
+		if ( $product->get_sku() ) { // Brief item 08: the selected SKU stays visible through basket and checkout.
+			$add[] = array( 'key' => 'Art.-Nr.', 'value' => $product->get_sku() );
+		}
+		return array_merge( $add, $item_data );
 	},
 	20,
 	2
@@ -180,7 +184,7 @@ add_action(
 		}
 		$sku = $product->get_sku();
 		if ( $sku ) {
-			$item->add_meta_data( '_gadgero_sku', $sku, true );
+			$item->add_meta_data( 'Art.-Nr.', $sku, true ); // visible on confirmation page and e-mails (brief item 08)
 		}
 	},
 	10,
@@ -325,7 +329,7 @@ add_filter(
 /* Prices for cards                                                     */
 /* ------------------------------------------------------------------ */
 
-/** Card price in the approved style: big price, real regular price struck through only for genuine sale prices. */
+/** Card price: one baseline; "ab" for variable products with different prices; struck-through regular price only for real sale prices. */
 function gadgero_card_price( WC_Product $p ) {
 	if ( $p->is_type( 'variable' ) ) {
 		$min = $p->get_variation_price( 'min', true );
@@ -333,7 +337,7 @@ function gadgero_card_price( WC_Product $p ) {
 		if ( '' === $min ) {
 			return '';
 		}
-		return ( $min !== $max ? '<small class="from">' . esc_html__( 'From', 'gadgero' ) . '</small> ' : '' ) . wc_price( $min );
+		return ( $min !== $max ? '<small class="from">ab</small> ' : '' ) . wc_price( $min );
 	}
 	if ( '' === $p->get_price() ) {
 		return '';
@@ -345,50 +349,60 @@ function gadgero_card_price( WC_Product $p ) {
 	return $html;
 }
 
-/** Short spec line for cards ("256 GB · Silver · Sealed"); falls back to the configuration values. */
+/**
+ * One useful configuration line for cards (brief item 04): the fixed configuration of a simple product
+ * ("128 GB · Ultramarin"), or the choices of a variable product ("11 / 13 Zoll · 128 / 256 GB · 2 Farben").
+ * A manual card summary (Gadgero tab) overrides it.
+ */
 function gadgero_card_spec( WC_Product $p ) {
 	$s = get_post_meta( $p->get_id(), '_gadgero_summary', true );
 	if ( $s ) {
 		return $s;
 	}
-	if ( $p->is_type( 'variable' ) ) {
-		$parts = array();
-		foreach ( gadgero_attr_order() as $tax ) {
-			$attr = $p->get_attributes()[ $tax ] ?? null;
-			if ( $attr && $attr->get_variation() ) {
-				$n       = count( $attr->get_options() );
-				$parts[] = $n . ' ' . strtolower( wc_attribute_label( $tax ) ) . ( $n > 1 ? ' options' : ' option' );
-			}
-		}
-		return implode( ' · ', $parts );
+	if ( ! $p->is_type( 'variable' ) ) {
+		return gadgero_config_line( $p, array(), false );
 	}
-	return gadgero_config_line( $p, array(), false );
+	$parts = array();
+	foreach ( gadgero_attr_order() as $tax ) {
+		$attr = $p->get_attributes()[ $tax ] ?? null;
+		if ( ! $attr || ! $attr->get_variation() ) {
+			continue;
+		}
+		$names = wc_get_product_terms( $p->get_id(), $tax, array( 'fields' => 'names' ) );
+		if ( 'pa_colour' === $tax && count( $names ) > 1 ) {
+			$parts[] = count( $names ) . ' Farben';
+		} elseif ( 'pa_screen-size' === $tax ) {
+			$parts[] = implode( ' / ', array_map( fn( $n ) => trim( str_replace( 'Zoll', '', $n ) ), $names ) ) . ' Zoll';
+		} else {
+			$parts[] = implode( ' / ', $names );
+		}
+	}
+	return implode( ' · ', $parts );
 }
 
 /** Add-to-cart control for cards. */
 function gadgero_card_button( WC_Product $p ) {
 	if ( ! $p->is_in_stock() ) {
-		return '<span class="add is-off">' . esc_html__( 'Sold out', 'gadgero' ) . '</span>';
+		return '<span class="add is-off">Ausverkauft</span>';
 	}
 	if ( $p->is_type( 'simple' ) && $p->is_purchasable() ) {
 		return sprintf(
-			'<a href="%s" data-quantity="1" data-product_id="%d" data-product_sku="%s" data-name="%s" class="add add_to_cart_button ajax_add_to_cart" rel="nofollow" aria-label="%s">%s</a>',
+			'<a href="%s" data-quantity="1" data-product_id="%d" data-product_sku="%s" data-name="%s" class="add add_to_cart_button ajax_add_to_cart" rel="nofollow" aria-label="%s">In den Warenkorb</a>',
 			esc_url( $p->add_to_cart_url() ),
 			$p->get_id(),
 			esc_attr( $p->get_sku() ),
 			esc_attr( $p->get_name() ),
-			esc_attr( sprintf( __( 'Add %s to cart', 'gadgero' ), $p->get_name() ) ),
-			esc_html__( 'Add to cart', 'gadgero' )
+			esc_attr( sprintf( '%s in den Warenkorb legen', $p->get_name() ) )
 		);
 	}
-	return '<a class="add" href="' . esc_url( $p->get_permalink() ) . '" aria-label="' . esc_attr( sprintf( __( 'Choose options for %s', 'gadgero' ), $p->get_name() ) ) . '">' . esc_html__( 'Choose options', 'gadgero' ) . '</a>';
+	return '<a class="add" href="' . esc_url( $p->get_permalink() ) . '" aria-label="' . esc_attr( sprintf( 'Konfiguration für %s wählen', $p->get_name() ) ) . '">Auswählen</a>';
 }
 
 /** One-line tax/shipping notice next to prices (German price-display rules). */
 function gadgero_price_notice() {
 	$page = function_exists( 'gadgero_page_url' ) ? gadgero_page_url( 'versand-und-zahlung' ) : '';
-	$link = $page ? '<a href="' . esc_url( $page ) . '">' . esc_html__( 'plus shipping', 'gadgero' ) . '</a>' : esc_html__( 'plus shipping', 'gadgero' );
-	return '<span class="taxnote">' . esc_html__( 'incl. VAT,', 'gadgero' ) . ' ' . $link . '</span>';
+	$link = $page ? '<a href="' . esc_url( $page ) . '">zzgl. Versand</a>' : 'zzgl. Versand';
+	return '<span class="taxnote">inkl. MwSt., ' . $link . '</span>';
 }
 
 /** Permalink of a page by slug, or ''. */
@@ -416,13 +430,13 @@ add_filter(
 	}
 );
 
-/** Mini-cart drawer content (approved drawer layout, WooCommerce cart data). */
+/** Mini-cart drawer content (German; WooCommerce cart data incl. configuration and SKU). */
 function gadgero_drawer_inner() {
 	$cart = WC()->cart;
 	echo '<div id="drawerInner" class="drawer-inner">';
 	echo '<div class="items" id="items">';
 	if ( ! $cart || $cart->is_empty() ) {
-		echo '<p class="empty">' . esc_html__( 'Your cart is empty. Add a device from the shop.', 'gadgero' ) . '</p>';
+		echo '<p class="empty">Ihr Warenkorb ist leer.</p>';
 	} else {
 		foreach ( $cart->get_cart() as $key => $ci ) {
 			$p = $ci['data'];
@@ -434,18 +448,21 @@ function gadgero_drawer_inner() {
 			if ( $line ) {
 				echo '<small class="cfg">' . esc_html( $line ) . '</small>';
 			}
-			echo '<small>' . esc_html( sprintf( /* translators: %d quantity */ __( 'Qty %d', 'gadgero' ), $ci['quantity'] ) ) . '</small></div>';
+			if ( $p->get_sku() ) {
+				echo '<small>Art.-Nr. ' . esc_html( $p->get_sku() ) . '</small>';
+			}
+			echo '<small>Menge: ' . (int) $ci['quantity'] . '</small></div>';
 			echo '<strong>' . wp_kses_post( $cart->get_product_subtotal( $p, $ci['quantity'] ) ) . '</strong></div>';
 		}
 	}
 	echo '</div>';
 	echo '<div class="dfoot">';
-	echo '<div class="total"><span>' . esc_html__( 'Subtotal', 'gadgero' ) . '</span><strong id="total">' . wp_kses_post( $cart ? $cart->get_cart_subtotal() : wc_price( 0 ) ) . '</strong></div>';
+	echo '<div class="total"><span>Zwischensumme</span><strong id="total">' . wp_kses_post( $cart ? $cart->get_cart_subtotal() : wc_price( 0 ) ) . '</strong></div>';
 	if ( $cart && ! $cart->is_empty() ) {
-		echo '<a class="solid" href="' . esc_url( wc_get_checkout_url() ) . '">' . esc_html__( 'Checkout', 'gadgero' ) . '</a>';
-		echo '<a class="ghost" href="' . esc_url( wc_get_cart_url() ) . '">' . esc_html__( 'View cart', 'gadgero' ) . '</a>';
+		echo '<a class="solid" href="' . esc_url( wc_get_checkout_url() ) . '">Zur Kasse</a>';
+		echo '<a class="ghost" href="' . esc_url( wc_get_cart_url() ) . '">Warenkorb ansehen</a>';
 	}
-	echo '<p class="dnote">' . esc_html__( 'Shipping and VAT are shown at checkout. Questions before you order?', 'gadgero' ) . ' <a href="' . esc_url( gadgero_wa_link( sprintf( __( 'Hi %s, I have a question about a device.', 'gadgero' ), get_bloginfo( 'name' ) ) ) ) . '" target="_blank" rel="noopener">' . esc_html__( 'Ask on WhatsApp', 'gadgero' ) . '</a></p>';
+	echo '<p class="dnote">Versandkosten und MwSt. sehen Sie an der Kasse. Fragen vor der Bestellung? <a href="' . esc_url( gadgero_advice_link( sprintf( 'Hallo %s, ich habe eine Frage zu einem Gerät.', get_bloginfo( 'name' ) ) ) ) . '">Beratung anfragen</a></p>';
 	echo '</div></div>';
 }
 
@@ -493,9 +510,9 @@ add_filter(
 		$d,
 		array(
 			'delimiter'   => '<span aria-hidden="true">/</span>',
-			'wrap_before' => '<nav class="crumbs" aria-label="' . esc_attr__( 'Breadcrumb', 'gadgero' ) . '">',
+			'wrap_before' => '<nav class="crumbs" aria-label="' . esc_attr__( 'Brotkrümelnavigation', 'gadgero' ) . '">',
 			'wrap_after'  => '</nav>',
-			'home'        => __( 'Home', 'gadgero' ),
+			'home'        => 'Startseite',
 		)
 	)
 );

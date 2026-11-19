@@ -1,8 +1,11 @@
 <?php
 /**
- * Hero: approved scroll story with the 3D phone. Product name, starting price and CTA come from the WooCommerce
- * campaign product (Customizer → Gadgero: homepage campaign). The CTA links to that exact product page.
- * Price and CTA are only rendered when the product is published, purchasable and in stock.
+ * Hero (brief 15.11.2026, item 01): the existing 3D Duo with its rotation / fold sequence on its own stage.
+ * Desktop: headline, text, price and action on the left, animation on the right. Mobile: title, animation, action.
+ * One headline only (no oversized duplicate lettering). Reduced motion: a single static frame (see hero.js).
+ *
+ * Name, "ab" price and link come from the WooCommerce campaign product and are only shown when that product is
+ * published, purchasable and in stock.
  *
  * @package Gadgero
  */
@@ -13,51 +16,41 @@ $product = gadgero_campaign_product();
 $any     = $product ? $product : gadgero_campaign_product( false );
 $name    = $any ? $any->get_name() : '';
 $from    = $product ? gadgero_campaign_from_price( $product ) : null;
-$url     = $product ? $product->get_permalink() : '';
-/* translators: %s product name */
-$cta     = $name ? sprintf( __( 'Shop %s', 'gadgero' ), $name ) : '';
 $tags    = array_filter( array_map( 'trim', preg_split( '/\R/', gadgero_campaign_text( 'gadgero_campaign_tags' ) ) ) );
-
-$price_block = function () use ( $product, $from, $url, $cta ) {
-	if ( ! $product || null === $from ) {
-		echo gadgero_flag( 'campaign product is missing, unpublished, not purchasable or out of stock – price and button hidden' ); // phpcs:ignore
-		return;
-	}
-	echo '<span class="from">' . esc_html__( 'From', 'gadgero' ) . ' ' . wp_kses_post( wc_price( $from ) ) . '</span>';
-	echo '<span class="taxnote hero-tax">' . esc_html__( 'incl. VAT, plus shipping', 'gadgero' ) . '</span>';
-	echo '<a class="explore" href="' . esc_url( $url ) . '">' . esc_html( $cta ) . ' <span aria-hidden="true">&rarr;</span></a>';
-};
 ?>
-<div class="story" id="story" aria-label="<?php echo esc_attr( $name ? $name . ', ' . __( 'scroll to explore', 'gadgero' ) : __( 'Featured device', 'gadgero' ) ); ?>">
+<section class="story" id="story" aria-label="<?php echo esc_attr( $name ? $name : 'Gadgero' ); ?>">
 	<div class="stage" id="stage">
-		<div class="counter" aria-hidden="true"><span id="cur">01</span><small>/ 02</small></div>
 		<div class="rail" aria-hidden="true"><i id="prog"></i></div>
 		<div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
-		<div class="word" aria-hidden="true" id="word"></div>
 		<div class="ring" id="ring" aria-hidden="true"></div>
 		<canvas id="gl" aria-hidden="true"></canvas>
-		<div class="fallback" id="fallback" aria-hidden="true"><?php echo gadgero_device_svg( 'phone', '#35c4ff', '#0a3fb8', '#b7c3d9' ); // phpcs:ignore ?></div>
-		<div class="steps" id="steps">
-			<div class="step" data-from=".34" data-to="1.01">
-				<div class="num" style="--k:0">02</div>
-				<?php if ( $name ) : ?><p class="step-label" style="--k:1"><?php echo esc_html( $name ); ?></p><?php endif; ?>
-				<h2 style="--k:2"><?php echo esc_html( gadgero_campaign_text( 'gadgero_campaign_head2' ) ); ?></h2>
-				<p style="--k:3"><?php echo esc_html( gadgero_campaign_text( 'gadgero_campaign_text2' ) ); ?></p>
-				<?php if ( $tags ) : ?>
-					<ul class="tags" style="--k:4"><?php foreach ( $tags as $t ) { echo '<li>' . esc_html( $t ) . '</li>'; } ?></ul>
-				<?php endif; ?>
-				<div class="step-buy" style="--k:5"><?php $price_block(); ?></div>
-			</div>
-		</div>
-		<div class="intro" id="intro">
-			<div class="wrap">
-				<div class="copy">
-					<?php if ( $name ) : ?><h2><?php echo esc_html( $name ); ?></h2><?php endif; ?>
-					<p><?php echo esc_html( gadgero_campaign_text( 'gadgero_campaign_intro' ) ); ?></p>
-					<?php $price_block(); ?>
+		<div class="fallback" id="fallback" aria-hidden="true"><?php echo gadgero_device_svg( 'phone', '#5b6270', '#1d2026', '#9aa1ad' ); // phpcs:ignore ?></div>
+
+		<div class="hero-copy" id="heroCopy">
+			<div class="hero-head">
+				<p class="hero-eyebrow"><?php echo esc_html( gadgero_condition_label( $any ? gadgero_condition( $any ) : '' ) ); ?></p>
+				<?php if ( $name ) : ?><h1 class="hero-title"><?php echo esc_html( $name ); ?></h1><?php endif; ?>
+				<div class="hero-slides">
+					<div class="hero-slide is-on" data-from="0" data-to=".34">
+						<p><?php echo esc_html( gadgero_campaign_text( 'gadgero_campaign_intro' ) ); ?></p>
+					</div>
+					<div class="hero-slide" data-from=".34" data-to="1.01">
+						<p class="hero-sub"><?php echo esc_html( gadgero_campaign_text( 'gadgero_campaign_head2' ) ); ?></p>
+						<p><?php echo esc_html( gadgero_campaign_text( 'gadgero_campaign_text2' ) ); ?></p>
+						<?php if ( $tags ) : ?><ul class="tags"><?php foreach ( $tags as $t ) { echo '<li>' . esc_html( $t ) . '</li>'; } ?></ul><?php endif; ?>
+					</div>
 				</div>
 			</div>
+			<div class="hero-buy">
+				<?php if ( $product && null !== $from ) : ?>
+					<p class="from">ab <?php echo wp_kses_post( wc_price( $from ) ); ?></p>
+					<p class="taxnote hero-tax">inkl. MwSt., zzgl. Versand</p>
+					<a class="explore" href="<?php echo esc_url( $product->get_permalink() ); ?>"><?php echo esc_html( sprintf( '%s ansehen', $name ) ); ?> <span aria-hidden="true">&rarr;</span></a>
+				<?php else : ?>
+					<?php echo gadgero_flag( 'campaign product missing, unpublished, not purchasable or sold out – price and button hidden' ); // phpcs:ignore ?>
+				<?php endif; ?>
+			</div>
 		</div>
-		<div class="hint" id="hint" aria-hidden="true"><?php esc_html_e( 'Scroll', 'gadgero' ); ?><i></i></div>
+		<div class="hint" id="hint" aria-hidden="true">Scrollen<i></i></div>
 	</div>
-</div>
+</section>

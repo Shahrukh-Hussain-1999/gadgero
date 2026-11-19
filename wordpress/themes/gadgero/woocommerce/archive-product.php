@@ -1,8 +1,9 @@
 <?php
 /**
- * Shop / category archive in the Gadgero layout: condition toggle (All / New / Refurbished), category chips,
- * the approved product grid and WooCommerce pagination. Condition filtering uses WooCommerce's native
- * filter_condition query var, category links keep it.
+ * Shop / category archive (brief item 04): two labelled filter groups ("Zustand", "Kategorie") that combine,
+ * sorting, the filtered result count and a clear reset when a combination has no matches.
+ * Condition uses WooCommerce's native filter_condition query var; category links keep it.
+ * The refurbishment process appears on the refurbished journey only.
  *
  * @package Gadgero
  * @version 8.6.0
@@ -17,40 +18,51 @@ $cond    = in_array( $cond, array( 'new', 'refurbished' ), true ) ? $cond : '';
 $current = is_product_category() ? get_queried_object() : null;
 $base    = $current ? get_term_link( $current ) : wc_get_page_permalink( 'shop' );
 $shop    = wc_get_page_permalink( 'shop' );
-$cats    = get_terms(
+$orderby = isset( $_GET['orderby'] ) ? sanitize_key( wp_unslash( $_GET['orderby'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
+$keep    = function ( $url ) use ( $orderby ) {
+	return $orderby ? add_query_arg( 'orderby', $orderby, $url ) : $url;
+};
+$cats = get_terms(
 	array(
 		'taxonomy'   => 'product_cat',
 		'hide_empty' => true,
 		'exclude'    => array( (int) get_option( 'default_product_cat' ) ),
+		'orderby'    => 'term_order',
 	)
 );
-$title = $current ? $current->name : __( 'Shop', 'gadgero' );
+$title = $current ? $current->name : 'Alle Geräte';
 if ( 'new' === $cond ) {
-	$title = $current ? sprintf( __( 'New %s', 'gadgero' ), strtolower( $current->name ) ) : __( 'New devices', 'gadgero' );
+	$title = $current ? $current->name . ' – neu' : 'Neue Geräte';
 } elseif ( 'refurbished' === $cond ) {
-	$title = $current ? sprintf( __( 'Refurbished %s', 'gadgero' ), strtolower( $current->name ) ) : __( 'Refurbished devices', 'gadgero' );
+	$title = $current ? $current->name . ' – refurbished' : 'Refurbished-Geräte';
 }
+$filtered = $cond || $current;
 ?>
 <main id="main" class="page-main shop-main">
 	<section class="page-head">
 		<div class="wrap">
 			<?php woocommerce_breadcrumb(); ?>
-			<p class="eyebrow"><?php echo esc_html( 'refurbished' === $cond ? __( 'Inspected, cleaned, data-wiped, battery-tested', 'gadgero' ) : ( 'new' === $cond ? __( 'Brand-new devices', 'gadgero' ) : __( 'In stock now', 'gadgero' ) ) ); ?></p>
 			<h1 class="sec"><?php echo esc_html( $title ); ?></h1>
 			<?php if ( $current && $current->description ) : ?><div class="lead"><?php echo wp_kses_post( wpautop( $current->description ) ); ?></div><?php endif; ?>
 			<div class="filters">
-				<div class="seg" role="group" aria-label="<?php esc_attr_e( 'Condition', 'gadgero' ); ?>">
-					<a class="seg-b" href="<?php echo esc_url( remove_query_arg( 'filter_condition', $base ) ); ?>" <?php echo '' === $cond ? 'aria-current="true"' : ''; ?>><?php esc_html_e( 'All', 'gadgero' ); ?></a>
-					<a class="seg-b" href="<?php echo esc_url( add_query_arg( 'filter_condition', 'new', $base ) ); ?>" <?php echo 'new' === $cond ? 'aria-current="true"' : ''; ?>><?php esc_html_e( 'New', 'gadgero' ); ?></a>
-					<a class="seg-b" href="<?php echo esc_url( add_query_arg( 'filter_condition', 'refurbished', $base ) ); ?>" <?php echo 'refurbished' === $cond ? 'aria-current="true"' : ''; ?>><?php esc_html_e( 'Refurbished', 'gadgero' ); ?></a>
+				<div class="fgroup">
+					<p class="fgroup-label" id="f-cond">Zustand</p>
+					<div class="seg" role="group" aria-labelledby="f-cond">
+						<a class="seg-b" href="<?php echo esc_url( $keep( remove_query_arg( 'filter_condition', $base ) ) ); ?>" <?php echo '' === $cond ? 'aria-current="true"' : ''; ?>>Alle</a>
+						<a class="seg-b" href="<?php echo esc_url( $keep( add_query_arg( 'filter_condition', 'new', $base ) ) ); ?>" <?php echo 'new' === $cond ? 'aria-current="true"' : ''; ?>>Neu</a>
+						<a class="seg-b" href="<?php echo esc_url( $keep( add_query_arg( 'filter_condition', 'refurbished', $base ) ) ); ?>" <?php echo 'refurbished' === $cond ? 'aria-current="true"' : ''; ?>>Refurbished</a>
+					</div>
 				</div>
-				<nav class="chips" aria-label="<?php esc_attr_e( 'Categories', 'gadgero' ); ?>">
-					<a class="chip" href="<?php echo esc_url( $cond ? add_query_arg( 'filter_condition', $cond, $shop ) : $shop ); ?>" <?php echo $current ? '' : 'aria-current="page"'; ?>><?php esc_html_e( 'All', 'gadgero' ); ?></a>
-					<?php foreach ( (array) $cats as $c ) : ?>
-						<?php $link = get_term_link( $c ); ?>
-						<a class="chip" href="<?php echo esc_url( $cond ? add_query_arg( 'filter_condition', $cond, $link ) : $link ); ?>" <?php echo ( $current && $current->term_id === $c->term_id ) ? 'aria-current="page"' : ''; ?>><?php echo esc_html( $c->name ); ?></a>
-					<?php endforeach; ?>
-				</nav>
+				<div class="fgroup">
+					<p class="fgroup-label" id="f-cat">Kategorie</p>
+					<nav class="chips" aria-labelledby="f-cat">
+						<a class="chip" href="<?php echo esc_url( $keep( $cond ? add_query_arg( 'filter_condition', $cond, $shop ) : $shop ) ); ?>" <?php echo $current ? '' : 'aria-current="page"'; ?>>Alle</a>
+						<?php foreach ( (array) $cats as $c ) : ?>
+							<?php $link = get_term_link( $c ); ?>
+							<a class="chip" href="<?php echo esc_url( $keep( $cond ? add_query_arg( 'filter_condition', $cond, $link ) : $link ) ); ?>" <?php echo ( $current && $current->term_id === $c->term_id ) ? 'aria-current="page"' : ''; ?>><?php echo esc_html( $c->name ); ?></a>
+						<?php endforeach; ?>
+					</nav>
+				</div>
 			</div>
 		</div>
 	</section>
@@ -58,7 +70,13 @@ if ( 'new' === $cond ) {
 		<div class="wrap">
 			<?php woocommerce_output_all_notices(); ?>
 			<?php if ( woocommerce_product_loop() ) : ?>
-				<div class="shop-tools"><?php woocommerce_result_count(); ?><?php woocommerce_catalog_ordering(); ?></div>
+				<div class="shop-tools">
+					<?php woocommerce_result_count(); ?>
+					<div class="tools-r">
+						<?php if ( $filtered ) : ?><a class="reset-link" href="<?php echo esc_url( $shop ); ?>">Filter zurücksetzen</a><?php endif; ?>
+						<?php woocommerce_catalog_ordering(); ?>
+					</div>
+				</div>
 				<div class="grid">
 					<?php
 					while ( have_posts() ) {
@@ -69,13 +87,31 @@ if ( 'new' === $cond ) {
 				</div>
 				<?php woocommerce_pagination(); ?>
 			<?php else : ?>
-				<p class="empty-shop"><?php esc_html_e( 'No devices match this selection right now.', 'gadgero' ); ?> <a href="<?php echo esc_url( $shop ); ?>"><?php esc_html_e( 'Show all devices', 'gadgero' ); ?></a></p>
+				<div class="empty-shop" role="status">
+					<p class="empty-title">Keine Geräte für diese Auswahl.</p>
+					<p>
+						<?php
+						if ( $cond && $current ) {
+							echo esc_html( sprintf( 'Zurzeit gibt es in „%s“ keine Geräte im Zustand „%s“.', $current->name, gadgero_condition_label( $cond ) ) );
+						} else {
+							echo 'Ändern Sie den Zustand oder die Kategorie.';
+						}
+						?>
+					</p>
+					<p class="empty-actions">
+						<a class="solid" href="<?php echo esc_url( $shop ); ?>">Filter zurücksetzen</a>
+						<?php if ( $cond && $current ) : ?>
+							<a class="ghost" href="<?php echo esc_url( get_term_link( $current ) ); ?>">Alle <?php echo esc_html( $current->name ); ?></a>
+							<a class="ghost" href="<?php echo esc_url( add_query_arg( 'filter_condition', $cond, $shop ) ); ?>"><?php echo esc_html( 'new' === $cond ? 'Alle neuen Geräte' : 'Alle Refurbished-Geräte' ); ?></a>
+						<?php endif; ?>
+					</p>
+				</div>
 			<?php endif; ?>
-			<p class="note"><?php echo wp_kses_post( sprintf( __( 'All prices in euros, %s.', 'gadgero' ), gadgero_price_notice() ) ); ?></p>
+			<p class="note">Alle Preise in Euro, <?php echo wp_kses_post( gadgero_price_notice() ); ?>.</p>
 		</div>
 	</section>
 	<?php if ( 'refurbished' === $cond ) : ?>
-		<section class="about proc-band"><div class="wrap"><?php get_template_part( 'template-parts/home/process', null, array( 'compact' => true ) ); ?></div></section>
+		<section class="about proc-band"><div class="wrap"><?php get_template_part( 'template-parts/home/process' ); ?></div></section>
 	<?php endif; ?>
 </main>
 <?php

@@ -74,10 +74,10 @@ add_action(
 function gadgero_campaign_default( $id ) {
 	$d = array(
 		'gadgero_campaign_word'  => '',
-		'gadgero_campaign_intro' => 'A foldable iPhone that opens into a tablet-size screen.',
-		'gadgero_campaign_head2' => 'Folds flat. Opens wide.',
-		'gadgero_campaign_text2' => 'A slim hinge that slips into a pocket and opens to a tablet-size OLED screen.',
-		'gadgero_campaign_tags'  => "Foldable\nTablet-size OLED",
+		'gadgero_campaign_intro' => 'Ein faltbares iPhone, das sich zu einem Display in Tablet-Größe öffnet.',
+		'gadgero_campaign_head2' => 'Zugeklappt kompakt. Aufgeklappt groß.',
+		'gadgero_campaign_text2' => 'Ein schlankes Scharnier: zusammengeklappt passt es in die Tasche, aufgeklappt bietet es ein Display in Tablet-Größe.',
+		'gadgero_campaign_tags'  => "Faltbar\nDisplay in Tablet-Größe",
 	);
 	return $d[ $id ] ?? '';
 }

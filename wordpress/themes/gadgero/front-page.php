@@ -1,6 +1,7 @@
 <?php
 /**
- * Homepage: approved section order, with the new / refurbished routes added after the trust strip.
+ * Homepage (brief 15.11.2026): Duo stage, four service points, New / Refurbished entries, short selection,
+ * about, trade-in.
  *
  * @package Gadgero
  */
