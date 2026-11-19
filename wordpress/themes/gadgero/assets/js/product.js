@@ -86,12 +86,18 @@
     });
   }
 
+  /* selected values + fixed attributes of the product, in the shop's attribute order (size · storage · colour · connectivity) */
+  var order = [], fixed = {};
+  try{ order = JSON.parse(cfg.dataset.order || "[]"); fixed = JSON.parse(cfg.dataset.fixed || "{}"); }catch(_){}
   function chosen(){
-    var parts = [], all = true;
+    var sel = {}, parts = [], all = true, any = false;
     $form.find("table.variations select").each(function(){
-      if(this.value) parts.push($(this).find("option:selected").text()); else all = false;
+      var tax = this.name.replace(/^attribute_/, "");
+      if(this.value){ sel[tax] = $(this).find("option:selected").text(); if(!$(this).closest("tr").hasClass("is-single")) any = true; } else all = false;
     });
-    return {parts:parts, all:all};
+    order.forEach(function(t){ if(sel[t]) parts.push(sel[t]); else if(fixed[t]) parts.push(fixed[t]); });
+    Object.keys(sel).forEach(function(t){ if(order.indexOf(t) < 0) parts.push(sel[t]); });
+    return {parts: any ? parts : [], all:all};
   }
   function writeConfig(){
     if(!cfg) return;

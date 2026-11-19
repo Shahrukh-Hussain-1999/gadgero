@@ -35,12 +35,14 @@ while ( have_posts() ) :
 	$missing = gadgero_spec_missing( $product );
 
 	// Fixed (non-selectable) configuration → compact summary. Condition is shown separately as a badge.
-	$fixed = array();
+	$fixed     = array();
+	$fixed_tax = array(); // for the "Ihre Auswahl" line in product.js
 	foreach ( gadgero_attr_order() as $tax ) {
 		if ( isset( $attrs[ $tax ] ) && ! $attrs[ $tax ]->get_variation() ) {
 			$names = wc_get_product_terms( $product->get_id(), $tax, array( 'fields' => 'names' ) );
 			if ( $names ) {
 				$fixed[ wc_attribute_label( $tax ) ] = implode( ', ', $names );
+				$fixed_tax[ $tax ]                    = implode( ' / ', $names );
 			}
 		}
 	}
@@ -125,7 +127,7 @@ while ( have_posts() ) :
 						</div>
 
 						<?php if ( $product->is_type( 'variable' ) ) : ?>
-							<p class="pdp-config" id="pdpConfig" data-name="<?php echo esc_attr( $product->get_name() ); ?>" data-cond="<?php echo esc_attr( gadgero_condition_label( $cond ) ); ?>" aria-live="polite"></p>
+							<p class="pdp-config" id="pdpConfig" data-name="<?php echo esc_attr( $product->get_name() ); ?>" data-cond="<?php echo esc_attr( gadgero_condition_label( $cond ) ); ?>" data-order="<?php echo esc_attr( wp_json_encode( gadgero_attr_order() ) ); ?>" data-fixed="<?php echo esc_attr( wp_json_encode( (object) $fixed_tax ) ); ?>" aria-live="polite"></p>
 						<?php endif; ?>
 
 						<div class="product_meta pdp-meta">

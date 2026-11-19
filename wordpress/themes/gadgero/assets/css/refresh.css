@@ -224,3 +224,4 @@ footer{background:var(--graphite)}
 /* basket / checkout item data: one row per entry (Konfiguration, Art.-Nr.) */
 dl.variation{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 8px;align-items:baseline}
 dl.variation dd{margin:0}
+.route-grid.one{grid-template-columns:1fr}

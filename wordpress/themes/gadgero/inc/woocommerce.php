@@ -80,6 +80,16 @@ add_filter(
 function gadgero_config_values( WC_Product $product, array $variation = array() ) {
 	$vals = array();
 	if ( $product->is_type( 'variation' ) ) {
+		// Fixed attributes of the parent (e.g. one storage size for all colours) belong to the configuration too.
+		$parent = wc_get_product( $product->get_parent_id() );
+		if ( $parent ) {
+			foreach ( $parent->get_attributes() as $tax => $attr ) {
+				if ( 'pa_condition' === $tax || $attr->get_variation() || ! $attr->get_visible() ) {
+					continue;
+				}
+				$vals[ $tax ] = implode( ' / ', $attr->is_taxonomy() ? wc_get_product_terms( $parent->get_id(), $tax, array( 'fields' => 'names' ) ) : $attr->get_options() );
+			}
+		}
 		$attrs = $variation ? $variation : $product->get_variation_attributes();
 		foreach ( $attrs as $key => $slug ) {
 			$tax = str_replace( 'attribute_', '', $key );

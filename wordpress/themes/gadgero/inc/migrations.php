@@ -13,10 +13,17 @@
 
 defined( 'ABSPATH' ) || exit;
 
-const GADGERO_DB_VERSION = 2;
+const GADGERO_DB_VERSION = 3;
+
+require_once __DIR__ . '/catalogue.php';
 
 add_action( 'init', 'gadgero_run_migrations', 99 );
 
+/**
+ * Runs pending migrations. On a normal request a long migration (v3: ~160 variations) works in small batches and
+ * continues on the next request, so shared-hosting time limits are never hit. With $force (WP-CLI / seed) it runs
+ * everything in one go.
+ */
 function gadgero_run_migrations( $force = false ) {
 	if ( ! class_exists( 'WooCommerce' ) ) {
 		return;
@@ -29,8 +36,22 @@ function gadgero_run_migrations( $force = false ) {
 		return;
 	}
 	set_transient( 'gadgero_migrating', 1, 120 );
+	if ( function_exists( 'set_time_limit' ) ) {
+		@set_time_limit( 120 ); // phpcs:ignore
+	}
 	if ( $v < 2 || $force ) {
 		gadgero_migration_2();
+		update_option( 'gadgero_db_version', 2 );
+	}
+	if ( $v < 3 || $force ) {
+		if ( $force ) {
+			delete_option( 'gadgero_mig3_state' );
+			while ( ! gadgero_migration_3() ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement
+			}
+		} elseif ( ! gadgero_migration_3() ) {
+			delete_transient( 'gadgero_migrating' );
+			return; // continues on the next request
+		}
 	}
 	update_option( 'gadgero_db_version', GADGERO_DB_VERSION );
 	delete_transient( 'gadgero_migrating' );
