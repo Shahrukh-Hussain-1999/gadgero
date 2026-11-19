@@ -78,7 +78,7 @@ $visit   = $address || $hours;
 <div class="toast" id="toast" role="status"></div>
 <?php
 /*
- * Floating WhatsApp button (bottom left). Only rendered when the business number is configured
+ * Floating WhatsApp button (bottom right). Only rendered when the business number is configured
  * (Customizer → Gadgero: company & contact) — never a WhatsApp link without a recipient.
  * On product pages the prefilled message names the product.
  */

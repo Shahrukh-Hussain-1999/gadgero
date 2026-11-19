@@ -52,7 +52,7 @@ h2.sec{margin:0;font:800 clamp(28px,4.2vw,48px)/1.05 var(--display);letter-spaci
 .hero-buy .explore{background:var(--cobalt);color:#fff;border-radius:4px}
 .hero-buy .explore:hover{background:var(--cobalt-h);color:#fff;transform:translateX(3px)}
 .rail{left:max(14px,env(safe-area-inset-left,0px))}
-.hint{left:auto;right:max(28px,calc((100% - 1240px)/2 + 24px));translate:none}
+.hint{left:50%;right:auto;translate:-50% 0}
 /* reduced motion: one static frame */
 .story.static{height:auto}
 .story.static .stage{position:relative;top:auto}
@@ -227,9 +227,10 @@ dl.variation dd{margin:0}
 .route-grid.one{grid-template-columns:1fr}
 
 /* ---------- floating WhatsApp button (bottom left) ---------- */
-.wa-float{position:fixed;z-index:65;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:10px;height:56px;min-width:56px;padding:0 16px 0 14px;border-radius:999px;background:#25d366;color:#fff;box-shadow:0 10px 24px rgba(0,0,0,.22);font:700 14px var(--body);text-decoration:none;animation:wa-nudge 6s ease-in-out 3s infinite}
+.wa-float{position:fixed;z-index:65;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:10px;height:56px;min-width:56px;padding:0 16px 0 14px;border-radius:999px;background:#25d366;color:#fff;box-shadow:0 10px 24px rgba(0,0,0,.22);font:700 14px var(--body);text-decoration:none;animation:wa-nudge 6s ease-in-out 3s infinite}
 .wa-float svg{position:relative;z-index:1;width:28px;height:28px;flex:none}
 .wa-float .wa-label{position:relative;z-index:1;white-space:nowrap}
+.wa-float{flex-direction:row-reverse;padding:0 14px 0 16px}
 .wa-float:hover,.wa-float:focus-visible{background:#1fb855;color:#fff}
 .wa-float:focus-visible{outline:3px solid var(--cobalt);outline-offset:3px}
 .wa-pulse{position:absolute;inset:0;border-radius:inherit;background:#25d366;opacity:.55;animation:wa-pulse 2.4s ease-out infinite}
