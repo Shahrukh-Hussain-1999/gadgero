@@ -20,7 +20,11 @@ function gadgero_missing_company_fields() {
 		'gadgero_returns'      => 'Returns address / contact',
 		'gadgero_delivery_time' => 'Delivery time',
 	);
-	return array_values( array_filter( $need, fn( $k ) => '' === gadgero_opt( $k ), ARRAY_FILTER_USE_KEY ) );
+	$missing = array_values( array_filter( $need, fn( $k ) => '' === gadgero_opt( $k ), ARRAY_FILTER_USE_KEY ) );
+	if ( defined( 'GADGERO_WA_DUMMY' ) && gadgero_wa_number() === preg_replace( '/\D+/', '', GADGERO_WA_DUMMY ) ) {
+		$missing[] = 'WhatsApp number (dummy +49 000 0000000 in use)';
+	}
+	return $missing;
 }
 
 /** IDs of products marked as unconfirmed. */
