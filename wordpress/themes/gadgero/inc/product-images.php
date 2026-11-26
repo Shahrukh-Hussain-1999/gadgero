@@ -30,6 +30,9 @@ function gadgero_product_image_files() {
 
 /** Product ID by catalogue code (e.g. "S24U"). */
 function gadgero_product_by_code( $code ) {
+	if ( 'DUO' === $code ) {
+		return gadgero_mig_product_any( 'Apple iPhone Duo' );
+	}
 	foreach ( gadgero_catalogue_v3() as $d ) {
 		if ( $d['code'] === $code ) {
 			return gadgero_mig_product_any( $d['n'] );
@@ -77,15 +80,16 @@ function gadgero_sync_product_images( $force = false ) {
 		[ $code, $colour ] = explode( '--', pathinfo( $file, PATHINFO_FILENAME ), 2 );
 		$pid = gadgero_product_by_code( $code );
 		$p   = $pid ? wc_get_product( $pid ) : null;
-		$term = get_term_by( 'slug', $colour, 'pa_colour' );
-		if ( ! $p || ! $term ) {
+		$all  = 'all' === $colour; // "<CODE>--all": one image for every variation (products without colours, e.g. iPhone Duo)
+		$term = $all ? null : get_term_by( 'slug', $colour, 'pa_colour' );
+		if ( ! $p || ( ! $all && ! $term ) ) {
 			error_log( "Gadgero images: no product/colour for $file" ); // phpcs:ignore
 			$done[ $key ] = 0;
 			continue;
 		}
 		$tmp = wp_tempnam( $file );
 		copy( gadgero_product_image_dir() . '/' . $file, $tmp );
-		$alt = $p->get_name() . ' ' . $term->name;
+		$alt = $all ? $p->get_name() : $p->get_name() . ' ' . $term->name;
 		$aid = media_handle_sideload( array( 'name' => sanitize_file_name( strtolower( $p->get_name() . '-' . $colour ) ) . '.' . pathinfo( $file, PATHINFO_EXTENSION ), 'tmp_name' => $tmp ), $pid, $alt );
 		if ( is_wp_error( $aid ) ) {
 			error_log( "Gadgero images: $file: " . $aid->get_error_message() ); // phpcs:ignore
@@ -103,12 +107,18 @@ function gadgero_sync_product_images( $force = false ) {
 		$done[ $key ] = $aid;
 		foreach ( $p->get_children() as $vid ) {
 			$v = wc_get_product( $vid );
-			if ( $v && $colour === ( $v->get_attributes()['pa_colour'] ?? '' ) ) {
+			if ( $v && ( $all || $colour === ( $v->get_attributes()['pa_colour'] ?? '' ) ) ) {
 				$v->set_image_id( $aid );
 				$v->save();
 			}
 		}
-		gadgero_set_main_image( $p );
+		if ( $all ) {
+			$p = wc_get_product( $pid );
+			$p->set_image_id( $aid );
+			$p->save();
+		} else {
+			gadgero_set_main_image( $p );
+		}
 	}
 	update_option( 'gadgero_img_done', $done, false );
 	if ( ! $todo ) {

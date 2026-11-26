@@ -35,4 +35,7 @@ To add images, compress them with `wordpress/setup/compress-images.php` and push
 - **Mapping:** `CODE--colour.webp`, one image per model and colour (see the file list in `wordpress/themes/gadgero/assets/product-images/`).
 
 ## Colours still without a photo (they show "Kein Foto verfügbar")
-Galaxy S24: Cobalt Violet, Amber Yellow · Galaxy S24 FE: Gray · Galaxy S25 Ultra: Titanium Silverblue, Titanium Whitesilver · Galaxy S26 FE: Graphite, Blueberry · iPhone 15: Blue, Yellow · iPhone 17: Mist Blue, Lavender · Apple iPhone Duo (no photo, the homepage uses the 3D model).
+Galaxy S24: Cobalt Violet, Amber Yellow · Galaxy S24 FE: Gray · Galaxy S25 Ultra: Titanium Silverblue, Titanium Whitesilver · Galaxy S26 FE: Graphite, Blueberry · iPhone 15: Blue, Yellow · iPhone 17: Mist Blue, Lavender.
+
+## Batch 3 — 26.11.2026
+- `DUO--all.webp` — Apple iPhone Duo (one image for all storage variants), supplied by the team. Source is only 261 × 334 px, so a larger original is still needed for a sharp product page. Source / usage rights: **NOT YET RECORDED**.

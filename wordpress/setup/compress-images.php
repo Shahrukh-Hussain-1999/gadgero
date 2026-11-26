@@ -21,7 +21,10 @@ foreach ( file( $map_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES ) as $l
 		WP_CLI::warning( "$file: " . $editor->get_error_message() );
 		continue;
 	}
-	$editor->resize( 1000, 1000, false );
+	$size = $editor->get_size();
+	if ( $size['width'] > 1000 || $size['height'] > 1000 ) {
+		$editor->resize( 1000, 1000, false ); // only ever shrink, never upscale
+	}
 	$editor->set_quality( 80 );
 	$dest = "$out/$target.webp";
 	$res  = $editor->save( $dest, 'image/webp' );
