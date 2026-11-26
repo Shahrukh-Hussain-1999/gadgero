@@ -317,10 +317,7 @@ function gadgero_product_visual( WC_Product $p, $size = 'woocommerce_thumbnail' 
 		return wp_get_attachment_image( $img_id, $size, false, array( 'alt' => $p->get_name(), 'loading' => 'lazy' ) );
 	}
 	$art = gadgero_art( $p );
-	if ( $art ) {
-		return gadgero_device_svg( $art['type'], $art['c1'], $art['c2'], $art['frame'], $p->get_name() );
-	}
-	return wc_placeholder_img( $size );
+	return gadgero_no_photo_svg( $art ? $art['type'] : 'phone', $p->get_name() );
 }
 
 /** Product page: tell product.js which variations have no photo of their own colour. */
@@ -328,6 +325,9 @@ add_filter(
 	'woocommerce_available_variation',
 	function ( $data, $product, $variation ) {
 		$data['gadgero_no_photo'] = ! $variation->get_image_id( 'edit' );
+		if ( '' === $variation->get_price() ) {
+			$data['price_html'] = '<span class="price on-request">Preis auf Anfrage</span>';
+		}
 		return $data;
 	},
 	10,
@@ -352,13 +352,13 @@ function gadgero_card_price( WC_Product $p ) {
 	if ( $p->is_type( 'variable' ) ) {
 		$min = $p->get_variation_price( 'min', true );
 		$max = $p->get_variation_price( 'max', true );
-		if ( '' === $min ) {
-			return '';
+		if ( '' === $min || false === $min || null === $min ) { // no priced variation yet
+			return '<span class="on-request">Preis auf Anfrage</span>';
 		}
 		return ( $min !== $max ? '<small class="from">ab</small> ' : '' ) . wc_price( $min );
 	}
 	if ( '' === $p->get_price() ) {
-		return '';
+		return '<span class="on-request">Preis auf Anfrage</span>';
 	}
 	$html = wc_price( wc_get_price_to_display( $p ) );
 	if ( $p->is_on_sale() && $p->get_regular_price() ) {
@@ -414,6 +414,12 @@ function gadgero_card_button( WC_Product $p ) {
 		);
 	}
 	return '<a class="add" href="' . esc_url( $p->get_permalink() ) . '" aria-label="' . esc_attr( sprintf( 'Konfiguration für %s wählen', $p->get_name() ) ) . '">Auswählen</a>';
+}
+
+/** Does the product have any price yet? (variable: at least one priced variation) */
+function gadgero_has_price( WC_Product $p ) {
+	$v = $p->is_type( 'variable' ) ? $p->get_variation_price( 'min' ) : $p->get_price();
+	return '' !== $v && false !== $v && null !== $v;
 }
 
 /** One-line tax/shipping notice next to prices (German price-display rules). */
@@ -533,4 +539,23 @@ add_filter(
 			'home'        => 'Startseite',
 		)
 	)
+);
+
+
+/* ------------------------------------------------------------------ */
+/* No prices yet (26.11.2026): show every configuration, "Preis auf     */
+/* Anfrage", never orderable until a price is entered in WooCommerce.    */
+/* ------------------------------------------------------------------ */
+add_filter( 'woocommerce_variation_is_visible', '__return_true', 10 ); // keep configurations selectable without a price
+
+add_filter(
+	'woocommerce_get_script_data',
+	function ( $params, $handle ) {
+		if ( 'wc-add-to-cart-variation' === $handle && is_array( $params ) ) {
+			$params['i18n_unavailable_text'] = 'Diese Konfiguration kann derzeit nicht bestellt werden – Preis auf Anfrage.';
+		}
+		return $params;
+	},
+	10,
+	2
 );

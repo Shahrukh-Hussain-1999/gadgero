@@ -132,7 +132,7 @@ function gadgero_catalogue_v3() {
 		$sam + array( 'n' => 'Galaxy S26 Ultra', 'code' => 'S26U', 'st' => array(), 'p' => array( 1399 ), 'col' => $s6, 'todo' => 'storage options' ),
 		/* Apple iPhone */
 		$app + array( 'n' => 'iPhone 14', 'code' => 'IP14', 'st' => array( '128 GB' ), 'p' => array( 599 ), 'col' => array( 'Midnight', 'Starlight', 'Blue', 'Purple', 'Yellow' ) ),
-		$app + array( 'n' => 'iPhone 15', 'code' => 'IP15', 'st' => array( '128 GB' ), 'p' => array( 699 ), 'col' => array( 'Black', 'Blue', 'Green', 'Yellow' ), 'spec' => 'iphone15' ),
+		$app + array( 'n' => 'iPhone 15', 'code' => 'IP15', 'st' => array( '128 GB' ), 'p' => array( 699 ), 'col' => array( 'Black', 'Blue', 'Green', 'Yellow', 'Pink' ), 'spec' => 'iphone15' ),
 		$app + array( 'n' => 'iPhone 16', 'code' => 'IP16', 'st' => array( '128 GB' ), 'p' => array( 799 ), 'col' => array( 'Black', 'White', 'Ultramarine', 'Teal', 'Pink' ), 'spec' => 'iphone16' ),
 		$app + array( 'n' => 'iPhone 16e', 'code' => 'IP16E', 'st' => array( '128 GB' ), 'p' => array( 599 ), 'col' => array( 'Black', 'White' ) ),
 		$app + array( 'n' => 'iPhone 16 Plus', 'code' => 'IP16PL', 'st' => array( '128 GB' ), 'p' => array( 899 ), 'col' => array( 'Black', 'White', 'Ultramarine', 'Teal', 'Pink' ) ),
@@ -270,7 +270,7 @@ function gadgero_mig_create( array $d, $order ) {
 				$v->set_parent_id( $pid );
 				$v->set_attributes( $set );
 				$v->set_sku( implode( '-', $sku ) );
-				$v->set_regular_price( (string) ( ( $d['p'][ $i ] ?? $d['p'][0] ) + $surcharge ) );
+				$v->set_regular_price( '' ); // no prices until the client supplies them (21.11.2026)
 				$v->set_manage_stock( true );
 				$v->set_stock_quantity( 3 );
 				$v->set_status( 'publish' );
@@ -352,4 +352,64 @@ function gadgero_migration_3() {
 	delete_option( 'gadgero_mig3_state' );
 	wc_delete_product_transients();
 	return true;
+}
+
+/**
+ * Migration v5 (26.11.2026): no prices until the client supplies them; iPhone 15 gets Pink (client list).
+ */
+function gadgero_migration_5() {
+	// iPhone 15 Pink.
+	$pid = gadgero_mig_product_any( 'iPhone 15' );
+	$p   = $pid ? wc_get_product( $pid ) : null;
+	if ( $p && $p->is_type( 'variable' ) ) {
+		$pink  = gadgero_mig_term( 'pa_colour', 'Pink', true );
+		$attrs = $p->get_attributes();
+		if ( isset( $attrs['pa_colour'] ) && ! in_array( (int) $pink->term_id, array_map( 'intval', $attrs['pa_colour']->get_options() ), true ) ) {
+			// A new attribute object is needed: WooCommerce does not persist in-place changes to an existing one.
+			$terms              = array_map( 'get_term', array_merge( $attrs['pa_colour']->get_options(), array( (int) $pink->term_id ) ) );
+			$attrs['pa_colour'] = gadgero_mig_attr( 'pa_colour', $terms, true, $attrs['pa_colour']->get_position() );
+			$p->set_attributes( $attrs );
+			$p->save();
+			wp_set_object_terms( $pid, array_map( fn( $t ) => (int) $t->term_id, $terms ), 'pa_colour' );
+		}
+		if ( ! wc_get_product_id_by_sku( 'GAD-IP15-128-PINK' ) ) {
+			$v = new WC_Product_Variation();
+			$v->set_parent_id( $pid );
+			$v->set_attributes( array( 'pa_colour' => $pink->slug ) );
+			$v->set_sku( 'GAD-IP15-128-PINK' );
+			$v->set_regular_price( '' );
+			$v->set_manage_stock( true );
+			$v->set_stock_quantity( 3 );
+			$v->set_status( 'publish' );
+			$v->save();
+		}
+		WC_Product_Variable::sync( $pid );
+	}
+
+	// Remove all placeholder prices (catalogue + Apple iPhone Duo).
+	foreach ( get_posts( array( 'post_type' => 'product', 'post_status' => array( 'publish', 'draft', 'private' ), 'posts_per_page' => -1, 'fields' => 'ids' ) ) as $id ) {
+		$prod = wc_get_product( $id );
+		if ( ! $prod ) {
+			continue;
+		}
+		$ids = $prod->is_type( 'variable' ) ? $prod->get_children() : array( $id );
+		foreach ( $ids as $vid ) {
+			$v = wc_get_product( $vid );
+			if ( $v && ( '' !== $v->get_regular_price() || '' !== $v->get_sale_price() ) ) {
+				$v->set_regular_price( '' );
+				$v->set_sale_price( '' );
+				$v->save();
+			}
+		}
+		if ( $prod->is_type( 'variable' ) ) {
+			WC_Product_Variable::sync( $id );
+		}
+	}
+
+	$pending   = (array) get_option( 'gadgero_pending_confirmations', array() );
+	$pending   = array_filter( $pending, fn( $l ) => false === strpos( $l, 'Catalogue v3' ) );
+	$pending[] = 'Prices: no prices are set (client has not supplied them) – products show "Preis auf Anfrage" and cannot be ordered until prices are entered.';
+	$pending[] = 'Product images: AI-generated representative images (labelled "Abbildung ähnlich"), not original photos – source and usage rights still to confirm; iPhone 17 Pro / Pro Max images show the older camera design.';
+	update_option( 'gadgero_pending_confirmations', array_values( array_unique( $pending ) ) );
+	wc_delete_product_transients();
 }

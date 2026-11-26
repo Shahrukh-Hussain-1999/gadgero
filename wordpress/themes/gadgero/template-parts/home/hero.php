@@ -42,12 +42,16 @@ $tags    = array_filter( array_map( 'trim', preg_split( '/\R/', gadgero_campaign
 				</div>
 			</div>
 			<div class="hero-buy">
-				<?php if ( $product && null !== $from ) : ?>
-					<p class="from">ab <?php echo wp_kses_post( wc_price( $from ) ); ?></p>
-					<p class="taxnote hero-tax">inkl. MwSt., zzgl. Versand</p>
-					<a class="explore" href="<?php echo esc_url( $product->get_permalink() ); ?>"><?php echo esc_html( sprintf( '%s ansehen', $name ) ); ?> <span aria-hidden="true">&rarr;</span></a>
+				<?php if ( $any && 'publish' === $any->get_status() ) : ?>
+					<?php if ( null !== $from ) : ?>
+						<p class="from">ab <?php echo wp_kses_post( wc_price( $from ) ); ?></p>
+						<p class="taxnote hero-tax">inkl. MwSt., zzgl. Versand</p>
+					<?php else : ?>
+						<p class="from on-request">Preis auf Anfrage</p>
+					<?php endif; ?>
+					<a class="explore" href="<?php echo esc_url( $any->get_permalink() ); ?>"><?php echo esc_html( sprintf( '%s ansehen', $name ) ); ?> <span aria-hidden="true">&rarr;</span></a>
 				<?php else : ?>
-					<?php echo gadgero_flag( 'campaign product missing, unpublished, not purchasable or sold out – price and button hidden' ); // phpcs:ignore ?>
+					<?php echo gadgero_flag( 'campaign product missing or unpublished' ); // phpcs:ignore ?>
 				<?php endif; ?>
 			</div>
 		</div>

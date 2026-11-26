@@ -175,3 +175,18 @@ function gadgero_icon( $name ) {
 	);
 	return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . ( $p[ $name ] ?? '' ) . '</svg>';
 }
+
+/**
+ * "Kein Foto verfügbar" placeholder (brief 26.11.2026): shown wherever a product / colour has no photo yet,
+ * instead of a drawing or the photo of another colour.
+ */
+function gadgero_no_photo_svg( $type = 'phone', $label = '' ) {
+	$tablet = in_array( $type, array( 'tablet', 'laptop', 'desktop', 'mini' ), true );
+	$device = $tablet
+		? '<rect x="70" y="92" width="160" height="118" rx="12" fill="none" stroke="#b8bec9" stroke-width="5"/><circle cx="150" cy="99" r="2.5" fill="#b8bec9"/>'
+		: '<rect x="112" y="62" width="76" height="150" rx="16" fill="none" stroke="#b8bec9" stroke-width="5"/><rect x="138" y="72" width="24" height="6" rx="3" fill="#b8bec9"/>';
+	$aria   = $label ? ' role="img" aria-label="' . esc_attr( $label . ' – kein Foto verfügbar' ) . '"' : ' aria-hidden="true"';
+	return '<svg class="no-photo" viewBox="0 0 300 300"' . $aria . '><rect width="300" height="300" rx="18" fill="#eef0f3"/>' . $device
+		. '<path d="M98 230 202 60" stroke="#c9ced6" stroke-width="5" stroke-linecap="round"/>'
+		. '<text x="150" y="252" text-anchor="middle" font-family="Manrope,Arial,sans-serif" font-size="17" font-weight="700" fill="#6b7280">Kein Foto verfügbar</text></svg>';
+}

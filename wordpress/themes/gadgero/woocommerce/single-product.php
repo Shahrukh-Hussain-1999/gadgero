@@ -56,7 +56,7 @@ while ( have_posts() ) :
 				<div class="pdp-grid">
 					<div class="pdp-media" id="pdpMedia">
 						<div class="pdp-stage" style="--glow:<?php echo esc_attr( gadgero_glow( $product ) ); ?>40">
-							<div class="pdp-main-img" id="pdpImg" data-art="<?php echo esc_attr( gadgero_device_svg( ( gadgero_art( $product ) ?? array( 'type' => 'phone' ) )['type'], ( gadgero_art( $product ) ?? array() )['c1'] ?? '#5b6270', ( gadgero_art( $product ) ?? array() )['c2'] ?? '#1d2026', ( gadgero_art( $product ) ?? array() )['frame'] ?? '#b9bfca' ) ); ?>">
+							<div class="pdp-main-img" id="pdpImg" data-art="<?php echo esc_attr( gadgero_no_photo_svg( ( gadgero_art( $product ) ?? array( 'type' => 'phone' ) )['type'] ) ); ?>">
 								<?php
 								if ( $gallery ) {
 									echo wp_get_attachment_image( $gallery[0], 'woocommerce_single', false, array( 'alt' => $product->get_name(), 'loading' => 'eager', 'fetchpriority' => 'high', 'data-full' => wp_get_attachment_image_url( $gallery[0], 'full' ) ) );
@@ -80,10 +80,11 @@ while ( have_posts() ) :
 								<?php endforeach; ?>
 							</div>
 						<?php endif; ?>
+						<?php if ( $gallery && ! $refurb ) : ?>
+							<p class="pdp-imgnote" id="pdpImgNote">Abbildung ähnlich</p>
+						<?php endif; ?>
 						<?php if ( $refurb && ! $actual ) : ?>
 							<p class="pdp-imgnote">Symbolbild – zeigt nicht den optischen Zustand dieses Geräts. Der Zustand ist unter „Zustand dieses Geräts“ beschrieben.</p>
-						<?php elseif ( ! $gallery ) : ?>
-							<p class="pdp-imgnote">Symbolbild</p>
 						<?php endif; ?>
 						<?php echo $gallery ? '' : gadgero_flag( 'approved original photos (front, back, side) with source and usage rights' ); // phpcs:ignore ?>
 					</div>
@@ -97,7 +98,7 @@ while ( have_posts() ) :
 						</p>
 
 						<div class="pdp-price" id="pdpPrice" data-initial="<?php echo esc_attr( gadgero_card_price( $product ) ); ?>"><?php echo wp_kses_post( gadgero_card_price( $product ) ); ?></div>
-						<p class="pdp-tax"><?php echo wp_kses_post( gadgero_price_notice() ); ?></p>
+						<?php if ( gadgero_has_price( $product ) ) : ?><p class="pdp-tax"><?php echo wp_kses_post( gadgero_price_notice() ); ?></p><?php endif; ?>
 
 						<?php if ( $product->get_short_description() ) : ?>
 							<div class="pdp-short"><?php echo wp_kses_post( wpautop( $product->get_short_description() ) ); ?></div>

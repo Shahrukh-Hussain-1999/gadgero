@@ -13,7 +13,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-const GADGERO_DB_VERSION = 4;
+const GADGERO_DB_VERSION = 5;
 
 /** Placeholder WhatsApp number (does not exist) until the client approves the business number. */
 const GADGERO_WA_DUMMY = '+49 000 0000000';
@@ -61,6 +61,9 @@ function gadgero_run_migrations( $force = false ) {
 		// v4 (21.11.2026): no real WhatsApp number yet - the whole site uses a non-existent dummy number,
 		// so no message can reach a real person. Replace it in the Customizer once the business number is approved.
 		set_theme_mod( 'gadgero_whatsapp', GADGERO_WA_DUMMY );
+	}
+	if ( $v < 5 || $force ) {
+		gadgero_migration_5();
 	}
 	update_option( 'gadgero_db_version', GADGERO_DB_VERSION );
 	delete_transient( 'gadgero_migrating' );

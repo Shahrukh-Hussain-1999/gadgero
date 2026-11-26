@@ -247,3 +247,12 @@ dl.variation dd{margin:0}
 /* the drawer and dialogs sit above the button */
 .drawer.on ~ .wa-float,.veil.on ~ .wa-float{z-index:60}
 @media (prefers-reduced-motion:reduce){.wa-float,.wa-pulse{animation:none!important}.wa-pulse{display:none}}
+
+/* no prices yet / no photo yet (26.11.2026) */
+.on-request{font:600 15px/1.2 var(--body);color:var(--ink-2)}
+.price .on-request{font-size:14px}
+.pdp-price .on-request{font:700 22px var(--display);color:var(--fg)}
+.hero-buy .from.on-request{font:700 24px/1 var(--display);color:#fff;margin-bottom:18px}
+.woocommerce-variation-price .on-request{font:600 15px var(--body)}
+svg.no-photo{width:100%;height:100%;mix-blend-mode:normal;filter:none!important}
+.thumb-media svg.no-photo,.pdp-main-img svg.no-photo,.mini svg.no-photo{filter:none}

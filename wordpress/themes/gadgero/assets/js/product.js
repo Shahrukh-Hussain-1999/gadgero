@@ -23,13 +23,10 @@
     $img.html('<img alt="">'); $img.find("img").attr({src:src, alt:alt || document.querySelector(".pdp-title").textContent}).attr("data-full", full || src);
     noteNoPhoto(false);
   }
-  /* colour without its own photo: neutral drawing + note, never the photo of another colour */
+  /* colour without its own photo: "Kein Foto verfügbar" placeholder, never the photo of another colour */
   function showArt(){ $img.html($img.attr("data-art") || ""); noteNoPhoto(true); }
-  function noteNoPhoto(on){
-    var $n = $("#pdpNoPhoto");
-    if(!$n.length) $n = $('<p class="pdp-imgnote" id="pdpNoPhoto" hidden>Symbolbild – ein Foto dieser Farbe folgt.</p>').insertAfter(".pdp-stage");
-    $n.prop("hidden", !on);
-  }
+  /* "Abbildung ähnlich" belongs to photos only; the placeholder says "Kein Foto verfügbar" itself */
+  function noteNoPhoto(on){ $("#pdpImgNote").prop("hidden", !!on); }
   $thumbs.on("click", function(){ show($thumbs.index(this)); });
   $(".pdp-nav").on("click", function(){ show(cur + parseInt($(this).data("step"),10)); });
   $("#pdpMedia").on("keydown", function(e){ if(e.key === "ArrowLeft") show(cur-1); if(e.key === "ArrowRight") show(cur+1); });
